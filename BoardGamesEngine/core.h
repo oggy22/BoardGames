@@ -23,7 +23,12 @@ public:
     SquareBase() : _square(0) {}
     SquareBase(int n) : _square(n)
     {
-        DCHECK(n >= 0 && n < W* H);
+        DCHECK(n >= 0 && n < W * H);
+    }
+    SquareBase(int x, int y) : _square(x + y * W)
+    {
+        DCHECK(0 <= x && x < W);
+        DCHECK(0 <= y && y < H);
     }
 
     int x()
@@ -39,7 +44,7 @@ public:
     bool move_left() { return ((_square--) % W) != 0; }
     bool move_right() { return ((++_square) % W) != 0; }
     bool move_up() { _square += W; return _square < W * H; }
-    bool move_down() { _square -= W; return _square >= 0; }
+    bool move_down() { if (_square < W) return false; _square -= W; return true; }
 
     bool move_upleft() { return move_up() && move_left(); }
     bool move_upright() { return move_up() && move_right(); }
@@ -53,7 +58,10 @@ public:
 
     bool operator--()
     {
-        return _square-- > 0;
+        if (_square == 0)
+            return false;
+        _square--;
+        return true;
     }
 
     operator int() { return int(_square); }

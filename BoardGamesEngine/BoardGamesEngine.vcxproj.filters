@@ -1,0 +1,40 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="Main.cpp" />
+    <ClCompile Include="combinations.cpp" />
+    <ClCompile Include="ConverterBatches.cpp" />
+    <ClCompile Include="Core.cpp" />
+    <ClCompile Include="EndTable.cpp" />
+    <ClCompile Include="Games\Checkers.cpp">
+      <Filter>Games</Filter>
+    </ClCompile>
+    <ClCompile Include="Games\ChessPosition.cpp">
+      <Filter>Games</Filter>
+    </ClCompile>
+    <ClCompile Include="Games\TicTacToe.cpp">
+      <Filter>Games</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Algorithms.h" />
+    <ClInclude Include="combinations.h" />
+    <ClInclude Include="ConverterBatches.h" />
+    <ClInclude Include="core.h" />
+    <ClInclude Include="EvaluationFunctions.h" />
+    <ClInclude Include="Games\TicTacToe.h">
+      <Filter>Games</Filter>
+    </ClInclude>
+    <ClInclude Include="Games\chess.h">
+      <Filter>Games</Filter>
+    </ClInclude>
+    <ClInclude Include="Games\checkers.h">
+      <Filter>Games</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Games">
+      <UniqueIdentifier>{200447ea-9a58-430f-95be-bb7c5aba5150}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

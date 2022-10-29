@@ -2,7 +2,9 @@
 # This .gitignore file was automatically created by Microsoft(R) Visual Studio.
 ################################################################################
 
-/.vs/BoardGames/v16
+/.vs
 /BoardGames/x64
 /BoardGamesEngine/Debug
+/EngineTests/x64
 /x64
+/packages
