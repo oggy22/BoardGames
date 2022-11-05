@@ -1,13 +1,14 @@
 #pragma once
 #include <experimental/generator>
+#include "..\core.h"
 
-enum Field
+enum class Field : int8_t
 {
 	Empty = 0, X = 1, O=-1
 };
 
 template <int W, int H>
-class Square
+class Square : SquareBase<W, H>
 {
 	int index;
 public:
@@ -34,24 +35,34 @@ struct Move
 	Field field;
 };
 
+enum Gravity
+{
+	None = 0, Down = 1, Both = 2
+};
+
 // W - Board Width
 // H - Board Height
-// R - Required stretche Length
-template <int W, int H, int R>
-class TicTacToePosition
+// R - Required stretch length
+template <int W, int H, int R, Gravity grav = Gravity::None>
+class TicTacToePosition : public BoardBase<W, H, Field>
 {
-	static_assert(W > 0 && H > 0 && R > 0);
-	Field field[W * H];
+	static_assert(W > 0 && H > 0 && R > 0, "W, H and R must be positive");
+	static_assert(R <= W && R <= H, "R may not be greater than dimensions");
+	//Field table[W * H];
+	int ply = 0;
 public:
-	Field operator[](Square<W,H> sq)
+	Field& operator[](SquareBase<W,H> sq)
 	{
-		return field[sq];
+		//this->xyz();
+		//xyz();
+		return this->table[sq];
 	}
 
 	TicTacToePosition()
 	{
+		ply = 0;
 		for (int i = 0; i < W * H; i++)
-			field[i] = Field::Empty;
+			this->table[i] = Field::Empty;
 	}
 
 	std::experimental::generator<Field> horizontal_fields(int y)
@@ -110,14 +121,14 @@ public:
 			{
 				switch (field)
 				{
-				case Empty:
+				case Field::Empty:
 					Xs = Os = 0;
 					break;
-				case X:
+				case Field::X:
 					Xs++; Os = 0;
 					if (Xs == R) { XStreakFound = true; if (OStreakFound) return false; }
 					break;
-				case O:
+				case Field::O:
 					Os++; Xs = 0;
 					if (Os == R) { OStreakFound = true; if (XStreakFound) return false;	}
 					break;
@@ -132,12 +143,70 @@ public:
 	bool is_winning_move(Move<W,H> move)
 	{
 		Square<W, H> sq;
-		sq = move.square; int up = 0; while (sq.move_up() && (*this)(sq) == Field::Empty) { up++; }
-		sq = move.square; int down = 0; while (sq.move_down() && (*this)(sq) == Field::Empty) { down++; }
+		int up = 0, down = 0;
+		sq = move.square; while (sq.move_down() && (*this)(sq) == Field::Empty) { down++; }
+		if constexpr (grav == Gravity::None)
+		{
+			sq = move.square; while (sq.move_up() && (*this)(sq) == Field::Empty) { up++; }
+		}
 		if (up + down + 1 >= R) return true;
+
+		int left = 0, right = 0;
 		sq = move.square; int left = 0; while (sq.move_left() && (*this)(sq) == Field::Empty) { left++; }
-		sq = move.square; int right = 0; while (sq.move_right() && (*this)(sq) == Field::Empty) { right++; }
+		if constexpr (grav != Gravity::Both)
+		{
+			sq = move.square; while (sq.move_right() && (*this)(sq) == Field::Empty) { right++; }
+		}
 		if (left + right + 1 >= R) return true;
+
 		return false;
+	}
+};
+
+class EndTableTTT
+{
+	int ply;
+public:
+
+};
+
+template <int W, int H, int R, Gravity grav = Gravity::None>
+class ConverterSimple
+{
+public:
+	static constexpr SIZE size()
+	{
+		SIZE size = 1;
+		for (int i = 0; i < W * H; i++)
+			size *= 3;
+
+		return size;
+	}
+
+	static SIZE index(TicTacToePosition<W, H, R, grav>& position)
+	{
+		SIZE index = 0;
+		for (Field field : position.get_pieces())
+		{
+			index *= 3;
+			index += (int8_t(field) + 1);
+		}
+		return index;
+	}
+
+	static TicTacToePosition<W, H, R, grav> create(SIZE index)
+	{
+		TicTacToePosition<W, H, R, grav> position;
+		for (auto sq : position.get_squares_reversed())
+		{
+			position[sq] = Field((index % 3) - 1);
+			index /= 3;
+		}
+		//for (Field& field : position.get_pieces_reversed())
+		//{
+		//	//field = Field((index % 3) - 1);
+		//	field = Field::Empty;
+		//}
+		return position;
 	}
 };

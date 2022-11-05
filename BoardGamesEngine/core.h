@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <experimental/generator>
 
 #define DCHECK(assertion) { if (!(assertion)) exit(1); }
 #define SIZE long long
@@ -87,6 +88,42 @@ public:
     piece_t& operator[](SquareBase<W, H> sq)
     {
         return table[int(sq)];
+    }
+
+    std::experimental::generator<piece_t> get_pieces()
+    {
+        SquareBase<W,H> sq;
+        do
+        {
+            co_yield (*this)[sq];
+        } while (++sq);
+    }
+
+    std::experimental::generator<piece_t> get_pieces_reversed()
+    {
+        SquareBase sq(W * H - 1);
+        do
+        {
+            co_yield (*this)[sq];
+        } while (--sq);
+    }
+
+    std::experimental::generator<SquareBase<W, H>> get_squares()
+    {
+        SquareBase<W, H> sq;
+        do
+        {
+            co_yield sq;
+        } while (++sq);
+    }
+
+    std::experimental::generator<SquareBase<W, H>> get_squares_reversed()
+    {
+        SquareBase<W, H> sq(W * H - 1);
+        do
+        {
+            co_yield sq;
+        } while (--sq);
     }
 };
 

@@ -144,7 +144,8 @@ private:
     Piece _promotion;
 };
 
-class ChessPosition
+template <bool QPO> // Queen Promotions Only
+class ChessPosition : public BoardBase<8, 8, Piece>
 {
     friend struct ConverterSimple;
 public:
@@ -524,7 +525,9 @@ struct ConverterSimple
     {
         return (SIZE)(1) << (6 * end_table.get_type().length());
     }
-    static SIZE PositionToIndex(const ChessPosition& position)
+
+    template <bool QPO>
+    static SIZE PositionToIndex(const ChessPosition<QPO>& position)
     {
         SIZE factor = 1;
         SIZE ret = 0;
@@ -535,10 +538,13 @@ struct ConverterSimple
         }
         return ret;
     }
-    static ChessPosition IndexToPosition(const EndTable& table, SIZE index)
+    template <bool QPO>
+    static ChessPosition<QPO> IndexToPosition(const EndTable& table, SIZE index)
     {
     }
-    static bool IndexToPosition(const EndTable& table, SIZE index, ChessPosition& position)
+
+    template <bool QPO>
+    static bool IndexToPosition(const EndTable& table, SIZE index, ChessPosition<QPO>& position)
     {
         bool first = true;
         bool second = false;
@@ -603,7 +609,10 @@ struct ConverterReducingWithPawns
         }
     }
     
-    static SIZE Enumerate(const ChessPosition&);
-    static std::tuple<std::string, SIZE> PositionToTable(const ChessPosition&);
-    static ChessPosition TableToPosition(const std::string& type, SIZE index);
+    template <bool QPO>
+    static SIZE Enumerate(const ChessPosition<QPO>&);
+    template <bool QPO>
+    static std::tuple<std::string, SIZE> PositionToTable(const ChessPosition<QPO>&);
+    template <bool QPO>
+    static ChessPosition<QPO> TableToPosition(const std::string& type, SIZE index);
 };

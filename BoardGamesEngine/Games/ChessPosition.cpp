@@ -32,7 +32,8 @@ if (sq2.MOVE() && !belongs_to(square(sq2), Player::First) && CONDITION)      \
 /// <summary>
 /// Generates all legal moves, but also updates the position with them
 /// </summary>
-std::experimental::generator<Move> ChessPosition::get_all_legal_moves()
+template <bool QPO>
+std::experimental::generator<Move> ChessPosition<QPO> ::get_all_legal_moves()
 {
     //DCHECK(Player::First)
     Square sq;
