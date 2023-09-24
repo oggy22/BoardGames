@@ -7,6 +7,6 @@ Player oponent(Player player)
     case Player::First: return Player::Second;
     case Player::Second: return Player::First;
     default:
-        DCHECK(false);
+        DCHECK_FAIL;
     }
 }

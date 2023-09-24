@@ -30,6 +30,6 @@ struct ConverterBatches
             return ret;
         }
         //int q1, r1, b1, n1, q2, r2, b2, n2;
-        DCHECK(false);
+        DCHECK_FAIL;
     }
 };

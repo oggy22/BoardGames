@@ -1,6 +1,7 @@
 #pragma once
 #include <experimental/generator>
 #include "..\core.h"
+#include "..\combinations.h"
 
 enum class Field : int8_t
 {
@@ -202,11 +203,28 @@ public:
 			position[sq] = Field((index % 3) - 1);
 			index /= 3;
 		}
-		//for (Field& field : position.get_pieces_reversed())
-		//{
-		//	//field = Field((index % 3) - 1);
-		//	field = Field::Empty;
-		//}
 		return position;
+	}
+};
+
+template <int W, int H, int R, Gravity grav = Gravity::None>
+class ConverterComb
+{
+	static SIZE size(int ply)
+	{
+		return nk(W * H, ply) * nk(ply, ply / 2);
+	}
+
+	static SIZE index(TicTacToePosition<W, H, R, grav>& position, int ply)
+	{
+		int ply = position.ply;
+		SIZE chunk_size = nk(ply, ply / 2);
+		SIZE chunk_index = 0;
+
+		SIZE index = 0;
+		for (Field field : position.get_squares())
+		{
+
+		}
 	}
 };

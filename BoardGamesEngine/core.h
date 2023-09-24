@@ -3,7 +3,17 @@
 #include <string>
 #include <experimental/generator>
 
-#define DCHECK(assertion) { if (!(assertion)) exit(1); }
+#define STRINGIFY(x) #x
+#define TOSTRING(x) STRINGIFY(x)
+#define AT __FILE__ ":" TOSTRING(__LINE__)
+#define DCHECK(assertion)           \
+{                                   \
+    /*if (!(assertion))*/               \
+        /*throw(AT);*/                  \
+}
+
+#define DCHECK_FAIL throw(AT)
+
 #define SIZE long long
 
 enum class Player
@@ -141,6 +151,11 @@ public:
     TableEntry(bool check_mate)
     {
         data = check_mate ? CheckMate : Open;
+    }
+
+    bool operator==(const TableEntry& other)
+    {
+        return data == other.data;
     }
 
     bool operator>(const TableEntry& entry)

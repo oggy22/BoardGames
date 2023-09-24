@@ -1,4 +1,5 @@
 #pragma once
+#include "core.h"
 #include <experimental/generator>
 
 #define SIZE long long
@@ -89,7 +90,7 @@ SIZE NK()
 }
 
 template <int N, int K>
-class combination
+class Combination
 {
 	static void _index_to_bools(SIZE index, bool* b)
 	{
@@ -118,3 +119,60 @@ public:
 		return true;
 	}
 };
+
+/// <summary>
+/// Converts combination from and to index
+/// </summary>
+class combination
+{
+	SIZE index = 0;
+	int n, k;
+	int curr_n, curr_k;
+public:
+	combination(int n, int k) : n(n), k(k), curr_n(0), curr_k(0), index(0)
+	{
+	}
+
+	void add_zero()
+	{
+		DCHECK(curr_k < k);
+		curr_n++;
+	}
+
+	void add_one()
+	{
+		DCHECK(curr_n < n);
+		curr_k++;
+		curr_n++;
+	}
+
+	SIZE get_index()
+	{
+		DCHECK(curr_n == n);
+		DCHECK(curr_k == k);
+	}
+
+	/// <summary>
+	/// Converts index to combination
+	/// </summary>
+	static std::experimental::generator<bool> get_combination(int n, int k, SIZE index)
+	{
+		DCHECK(index >= 0);
+		DCHECK(index < nk(n, k));
+		// (n/k) = (n-1/k-1) + (n-1/k)
+		// (4/2) = 6
+		// 1100, 1010, 1001, 0110, 0101, 0011
+		int n_ = n, k_ = k;
+		for (; n_ > 0; n_--)
+		{
+			SIZE treshold = nk(n_ - 1, k_ - 1);
+			co_yield index < treshold;
+			if (index >= treshold)
+				index -= treshold;
+			else
+				k_--;
+		}
+		DCHECK(k_ == 0);
+	}
+};
+

@@ -38,7 +38,7 @@ static char Piece_to_char(Piece piece)
     case Piece::Bishop: return 'B';
     case Piece::Knight: return 'N';
     case Piece::Pawn: return 'P';
-    default: DCHECK(false);
+    default: DCHECK_FAIL;
     }
 }
 
@@ -52,7 +52,7 @@ static Piece char_to_piece(char c)
     case 'B': return Piece::Bishop;
     case 'N': return Piece::Knight;
     case 'P': return Piece::Pawn;
-    default: DCHECK(false);
+    default: DCHECK_FAIL;
     }
 }
 
@@ -126,7 +126,7 @@ if (sq.MOVE() && abs(square(sq)) == PIECE && !belongs_to(square(sq), player)) \
 class Move
 {
 public:
-    bool is_valid() { return _from != -1; }
+    bool is_valid() { return int(_from) != -1; }
     Move() : _from(-1) { }
     Move(Square from, Square to, Piece captured = Piece::None) : _from(from), _to(to), _captured(captured) {}
     void flip_rows();
