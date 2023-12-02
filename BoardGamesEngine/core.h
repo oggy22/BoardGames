@@ -137,6 +137,11 @@ public:
     }
 };
 
+/// <summary>
+/// Represents a single board position in the end games tables.
+/// Each entry can represent win, lose or open position.
+/// Win and lose positions are denoted with number representing the distance from the win or lose respectively.
+/// </summary>
 class TableEntry
 {
     const int8_t Open = 0;
