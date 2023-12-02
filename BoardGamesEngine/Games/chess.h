@@ -14,7 +14,8 @@
 
 enum Piece
 {
-    None = 0, King = 1, Queen = 2, Rook = 3, Bishop = 4, Knight = 5, Pawn = 6,
+    None = 0,
+    King = 1, Queen = 2, Rook = 3, Bishop = 4, Knight = 5, Pawn = 6,
     OtherKing = -1, OtherQueen = -2, OtherRook = -3, OtherBishop = -4, OtherKnight = -5, OtherPawn = -6
 };
 
@@ -436,14 +437,14 @@ public:
         std::map<Piece, TableEntry*> table_cap;
         for (auto pair : get_captures())
         {
-            tables[pair.first][Piece::None] = Get(pair.second);
+            //tables[pair.first][Piece::None] = Get(pair.second);
         }
 
         // Promotion tables
         std::map<Piece, TableEntry*> table_prom;
         for (auto pair : get_promotions(Piece::Queen))
         {
-            tables[Piece::None][Piece::Queen] = Get(pair.second);
+            //tables[Piece::None][Piece::Queen] = Get(pair.second);
         }
 
         // Check mates first

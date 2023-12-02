@@ -18,3 +18,5 @@ ConverterTest(2, 2, 2)
 ConverterTest(3, 2, 2)
 
 ConverterTest(3, 3, 3)
+
+ConverterTest(4, 3, 3)
