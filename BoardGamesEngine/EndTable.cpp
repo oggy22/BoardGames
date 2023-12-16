@@ -14,23 +14,23 @@ void check(std::string_view sv)
     }
 }
 
-std::string create(const std::vector<Piece>& first, const std::vector<Piece>& second)
+std::string create(const std::vector<chess::Piece>& first, const std::vector<chess::Piece>& second)
 {
     std::string ret = "K";
     ret.reserve(first.size() + second.size() + 2);
-    for (Piece p : first)
+    for (chess::Piece p : first)
     {
-        ret += Piece_to_char(p);
+        ret += chess::Piece_to_char(p);
     }
     ret += "K";
-    for (Piece p : second)
+    for (chess::Piece p : second)
     {
-        ret += Piece_to_char(p);
+        ret += chess::Piece_to_char(p);
     }
     return ret;
 }
 
-EndTable::EndTable(const std::string& type) : type(type)
+chess::EndTable::EndTable(const std::string& type) : type(type)
 {
     DCHECK(type[0] == 'K');
     second_king = type.find('K', 1);
@@ -40,14 +40,14 @@ EndTable::EndTable(const std::string& type) : type(type)
     DCHECK(second_king != std::string::npos);
 }
 
-std::string EndTable::get_inverse_type()
+std::string chess::EndTable::get_inverse_type()
 {
     std::string ret = this->type.substr(second_king);
     ret += this->type.substr(0, second_king);
     return ret;
 }
 
-std::experimental::generator<std::string> EndTable::get_descendant_types()
+std::experimental::generator<std::string> chess::EndTable::get_descendant_types()
 {
     // Capture an opponents piece
     for (size_t i = second_king + 1; i < type.length(); i++)
@@ -70,7 +70,7 @@ std::experimental::generator<std::string> EndTable::get_descendant_types()
     }
 }
 
-std::experimental::generator<std::pair<Piece, std::string>> EndTable::get_captures()
+std::experimental::generator<std::pair<chess::Piece, std::string>> chess::EndTable::get_captures()
 {
     for (size_t i = second_king + 1; i < type.length(); i++)
     {
@@ -84,7 +84,7 @@ std::experimental::generator<std::pair<Piece, std::string>> EndTable::get_captur
     }
 }
 
-std::experimental::generator<std::pair<Piece, std::string>> EndTable::get_promotions(Piece promo_piece)
+std::experimental::generator<std::pair<chess::Piece, std::string>> chess::EndTable::get_promotions(Piece promo_piece)
 {
     DCHECK(promo_piece == Piece::Queen
         || promo_piece != Piece::Rook
@@ -114,4 +114,4 @@ std::experimental::generator<std::pair<Piece, std::string>> EndTable::get_promot
     }
 }
 
-std::map<std::string, EndTable> EndTable::all_tables_;
+std::map<std::string, chess::EndTable> chess::EndTable::all_tables_;

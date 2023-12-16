@@ -1,5 +1,4 @@
 #include "pch.h"
-#include "..\BoardGamesEngine\Games\TicTacToe.h"
 #include "..\BoardGamesEngine\combinations.h"
 
 #define CombinationTest(N,K)									\
@@ -20,7 +19,11 @@ CombinationTest(1, 1)
 
 CombinationTest(6, 4)
 
-//CombinationTest(15, 5)
+CombinationTest(8, 5)
+
+CombinationTest(10, 5)
+
+CombinationTest(15, 10)
 
 TEST(CombinationTest, CombinationTest)
 {															

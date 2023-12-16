@@ -2,7 +2,7 @@
 #include "..\BoardGamesEngine\Games\TicTacToe.h"
 
 #define ConverterTest(W,H,R)									\
-TEST(TicTacToe, ConverterSimple ## W ## H) {					\
+TEST(MNK, ConverterSimple ## W ## H) {							\
 	typedef ConverterSimple<W,H,R> Converter;					\
 	typedef TicTacToePosition<W,H,R> TTT;						\
 	for (SIZE index = 0; index < Converter::size(); index++)	\

@@ -31,6 +31,12 @@
     <ClInclude Include="Games\checkers.h">
       <Filter>Games</Filter>
     </ClInclude>
+    <ClInclude Include="MNKGeneralized.h">
+      <Filter>Games</Filter>
+    </ClInclude>
+    <ClInclude Include="Games\Connect4.h">
+      <Filter>Games</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Games">

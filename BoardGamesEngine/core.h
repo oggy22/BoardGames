@@ -82,6 +82,18 @@ public:
         return _square < W * H;
     }
 
+    /// <summary>
+    /// Chess like notation works for bigger boards than 8x8
+    /// </summary>
+    /// <returns>For example "A1" for the first square</returns>
+    std::string chess_notation()
+    {
+        static_assert(W <= 26 && H < 10);
+        std::string ret("  ");
+        ret[0] = 'A' + x();
+        ret[1] = '1' + x();
+    }
+
 protected:
     static_assert(W * H < 1 << 8);
     uint8_t _square;
@@ -111,7 +123,7 @@ public:
 
     std::experimental::generator<piece_t> get_pieces_reversed()
     {
-        SquareBase sq(W * H - 1);
+        SquareBase<W, H> sq(W * H - 1);
         do
         {
             co_yield (*this)[sq];

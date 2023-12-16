@@ -37,3 +37,24 @@ TEST(Core, SquareBase8_8) {
 			sq2 = sq; EXPECT_EQ(sq2.move_down(), y != 0);
 		}
 }
+
+TEST(Core, BoardBase8_8) {
+	BoardBase<8, 8, int8_t> board;
+
+	int count = 0;
+	for (auto pair : board.get_pieces())
+	{
+		count++;
+	}
+	EXPECT_EQ(count, 8 * 8);
+
+
+	count = 0;
+	for (auto pair : board.get_pieces_reversed())
+	{
+		count++;
+	}
+	EXPECT_EQ(count, 8 * 8);
+
+	//for (auto piece
+}

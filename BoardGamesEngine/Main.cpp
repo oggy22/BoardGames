@@ -27,9 +27,9 @@ void Print() //requires Converter<T>
 {
     std::cout << "All tables:" << T::name() << std::endl;
     SIZE total_size = 0;
-    for (EndTable table : EndTable::all_tables())
+    for (chess::EndTable table : chess::EndTable::all_tables())
     {
-        SIZE size = table.get_size<ConverterBatches>();
+        SIZE size = table.get_size<chess::ConverterBatches>();
         std::cout << table.get_type() << " " << size << " " << size_to_memory(size) << std::endl;
         total_size += size;
     }
@@ -39,21 +39,21 @@ void Print() //requires Converter<T>
 
 int main()
 {
-    std::map<Piece, std::map <Piece, int>> map;
-    map[Piece::Knight][Piece::Queen] = 5;
+    std::map<chess::Piece, std::map <chess::Piece, int>> map;
+    map[chess::Piece::Knight][chess::Piece::Queen] = 5;
 
     for (int n = 0; n < 6; n++)
         for (int k = 0; k <= n; k++)
             std::cout << "nk(" << n << "," << k << ")" << nk(n, k) << std::endl;
 
-    std::cout << "Total tables: " << EndTable::total_tables() << std::endl;
-    EndTable end_table = EndTable::Create("KQK");
-    std::cout << "Total tables: " << EndTable::total_tables() << std::endl;
+    std::cout << "Total tables: " << chess::EndTable::total_tables() << std::endl;
+    chess::EndTable end_table = chess::EndTable::Create("KQK");
+    std::cout << "Total tables: " << chess::EndTable::total_tables() << std::endl;
 
     std::cout << std::endl;
 
-    Print<ConverterSimple>();
-    Print<ConverterReducing>();
-    Print<ConverterReducingWithPawns>();
-    Print<ConverterBatches>();
+    Print<chess::ConverterSimple>();
+    Print<chess::ConverterReducing>();
+    Print<chess::ConverterReducingWithPawns>();
+    Print<chess::ConverterBatches>();
 }
