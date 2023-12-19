@@ -68,6 +68,7 @@ public:
 			if (min.val > max.val)
 				max = min;
 		}
+		return max;
 	}
 };
 

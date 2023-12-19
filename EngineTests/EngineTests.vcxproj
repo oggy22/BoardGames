@@ -37,6 +37,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="algorithms_test.cpp" />
+    <ClCompile Include="chess_test.cpp" />
     <ClCompile Include="combination_test.cpp" />
     <ClCompile Include="Connect4_test.cpp" />
     <ClCompile Include="core_test.cpp" />
@@ -83,8 +84,8 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>X64;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions>/std:c++latest %(AdditionalOptions)</AdditionalOptions>
-	  <AdditionalDependencies>ChessPosition.obj</AdditionalDependencies>
-	  <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <AdditionalDependencies>ChessPosition.obj</AdditionalDependencies>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
     </ClCompile>

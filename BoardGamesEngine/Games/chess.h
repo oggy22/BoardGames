@@ -67,8 +67,9 @@ namespace chess {
     class Square : public SquareBase<8, 8>
     {
     public:
-        Square() : _square(0) {}
-        Square(int n) : _square(n) {}
+        Square() : SquareBase(0) { }
+        Square(int n) : SquareBase(n) { }
+        Square(int letter, int number) : SquareBase(number * 8 + letter) {}
         Square(const char s[3])
         {
             DCHECK(s[0] >= 'A' && s[0] <= 'H');
@@ -76,7 +77,20 @@ namespace chess {
             _square = 8 * (s[1] - '1') + (s[0] - 'A');
         }
 
-        bool operator==(const Square& other) { return _square == other._square; }
+        static std::experimental::generator<Square> all_squares()
+        {
+            Square square(0);
+            do
+            {
+                co_yield square;
+            } while (++square);
+        }
+
+        Square flip_horizontally() { return Square(8 - x() - 1, y()); }
+        Square flip_vertifaclly() { return Square(x(), 8 - y() - 1); }
+
+        bool operator==(const Square& other) const { return _square == other._square; }
+        bool operator!=(const Square& other) const { return _square != other._square; }
 
         int row() { return _square >> 3; }
         int column() { return _square & 0b111; }
@@ -93,23 +107,23 @@ namespace chess {
 
         operator int() { return int(_square); }
 
-        //bool operator++()
-        //{
-        //    _square++;
-        //    return _square < 64;
-        //}
+        bool operator++()
+        {
+            _square++;
+            return _square < 64;
+        }
 
-        //bool operator--()
-        //{
-        //    _square--;
-        //    return _square >= 0;
-        //}
+        bool operator--()
+        {
+            _square--;
+            return _square >= 0;
+        }
 
     private:
         /// <summary>
         /// A1=0, B1=1, C1=3, ..., H1=7, A2=8, B2=9, ..., H2=15, ..., H8 = 63  
         /// </summary>
-        uint8_t _square;
+        //uint8_t _square;
     };
 
 #define CHECK_DIRECTION(START, MOVE, PIECES)    \
@@ -200,6 +214,35 @@ if (sq.MOVE() && abs(square(sq)) == PIECE && !belongs_to(square(sq), player))   
 
         int Evaluate() { return 0; }
         
+        bool operator==(const ChessPosition<QPO>& other) const
+        {
+            if (King1 != other.King1 || King2 != other.King2)
+                return false;
+            for (int i = 0; i < 64; i++)
+            {
+                if (table[i] != other.table[i])
+                    return false;
+            }
+            return true;
+        }
+
+        void invert()
+        {
+            for (int column = 0; column < 8; column++)
+            {
+                Square bottom(column, 0);
+                Square top(column, 7);
+                for (int i = 0; i < 4; i++)
+                {
+                    Piece bottomPiece = (*this)[bottom];
+                    Piece topPiece = (*this)[top];
+                    table[bottom] = Piece(0 - topPiece);
+                    //table[top] = Piece(0 - bottomPiece);
+                }
+                this->turn = oponent(this->turn);
+            }
+        }
+
         // Pawns one step before promotion?
         bool almost_promotion()
         {

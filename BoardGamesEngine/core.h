@@ -16,13 +16,13 @@
 
 #define SIZE long long
 
-enum class Player
+enum class Player : int
 {
     // The player who has turn
-    First,
+    First = 1,
 
     // The other player
-    Second
+    Second = -1
 };
 
 Player oponent(Player player);
@@ -62,6 +62,9 @@ public:
     bool move_downleft() { return move_down() && move_left(); }
     bool move_downright() { return move_down() && move_right(); }
 
+    SquareBase flip_horizontally() { return Square(W-x()-1, y()); }
+    SquareBase flip_vertifaclly() { return Square(x(), H-y() - 1); }
+
     bool operator++()
     {
         return ++_square < W * H;
@@ -91,7 +94,8 @@ public:
         static_assert(W <= 26 && H < 10);
         std::string ret("  ");
         ret[0] = 'A' + x();
-        ret[1] = '1' + x();
+        ret[1] = '1' + y();
+        return ret;
     }
 
 protected:
