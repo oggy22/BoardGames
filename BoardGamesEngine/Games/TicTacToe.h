@@ -139,7 +139,7 @@ public:
 		return false;
 	}
 
-	//get_all_legal_moves
+	//all_legal_moves
 	
 	bool is_winning_move(Move<W,H> move)
 	{

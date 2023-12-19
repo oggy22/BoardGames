@@ -20,6 +20,12 @@ TEST(chess, init_position) {
 		EXPECT_EQ(pos[square], -pos[square_flip])
 			<< "comparing " << square.chess_notation() << " and " << square_flip.chess_notation() << std::endl;
 	}
+
+	for (chess::Move move : pos.all_legal_moves())
+	{
+
+
+	}
 }
 
 TEST(chess, invert) {

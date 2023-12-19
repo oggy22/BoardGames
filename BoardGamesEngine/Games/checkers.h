@@ -122,7 +122,7 @@ if (sq2.move() && belongs_to((*this)[sq2], oponent(player)))		\
 		}
 	}
 
-	std::experimental::generator<Move> get_all_legal_moves()
+	std::experimental::generator<Move> all_legal_moves()
 	{
 		for (Square sq : get_all_legal_squares())
 		{

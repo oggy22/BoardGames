@@ -101,9 +101,15 @@ namespace chess {
             return "" + chCol + chRow;
         }
 
-        bool move_knight1() { return move_up() && move_up() && move_left(); }
-        //todo...
-        bool move_knight8() { return move_up() && move_left() && move_left(); }
+        bool move_knight1() { return move_upleft() && move_up(); }
+        bool move_knight2() { return move_upleft() && move_left(); }
+        bool move_knight3() { return move_upright() && move_up(); }
+        bool move_knight4() { return move_upright() && move_right(); }
+
+        bool move_knight5() { return move_downleft() && move_down(); }
+        bool move_knight6() { return move_downleft() && move_left(); }
+        bool move_knight7() { return move_downright() && move_down(); }
+        bool move_knight8() { return move_downright() && move_right(); }
 
         operator int() { return int(_square); }
 
@@ -125,20 +131,6 @@ namespace chess {
         /// </summary>
         //uint8_t _square;
     };
-
-#define CHECK_DIRECTION(START, MOVE, PIECES)    \
-sq = START;                                     \
-while (sq.MOVE())                               \
-{                                               \
-    Piece piece = square(sq);                   \
-    if (belongs_to(piece, player))              \
-        break;                                  \
-    piece = abs(piece);                         \
-    if (PIECES)                                 \
-        return true;                            \
-    if (piece != Piece::None)                   \
-        break;                                  \
-};
 
 #define CHECK_SINGLE(START, MOVE, PIECE)                                        \
 sq = START;                                                                     \
@@ -212,7 +204,7 @@ if (sq.MOVE() && abs(square(sq)) == PIECE && !belongs_to(square(sq), player))   
             }
         }
 
-        int Evaluate() { return 0; }
+        int Evaluate() const { return 0; }
         
         bool operator==(const ChessPosition<QPO>& other) const
         {
@@ -272,7 +264,7 @@ if (sq.MOVE() && abs(square(sq)) == PIECE && !belongs_to(square(sq), player))   
             //if (move.from() == King2) King2 = move.to();
         }
         Piece operator[](Square square) { return table[square]; }
-        std::experimental::generator<Move> get_all_legal_moves()
+        std::experimental::generator<Move> all_legal_moves()
         {
 #define MOVE_IN_DIRECTION(MOVE)                                 \
 sq2 = sq;                                                       \
@@ -354,7 +346,7 @@ if (sq2.MOVE() && !belongs_to(square(sq2), Player::First) && CONDITION)      \
         }
         bool exists_move(bool (*func)(const ChessPosition&))
         {
-            for (auto move : get_all_legal_moves())
+            for (auto move : all_legal_moves())
             {
                 (*this) += move;
                 bool exists = func(*this);
@@ -366,7 +358,7 @@ if (sq2.MOVE() && !belongs_to(square(sq2), Player::First) && CONDITION)      \
         }
         bool for_each_move(bool (*func)(const ChessPosition&))
         {
-            for (auto move : get_all_legal_moves())
+            for (auto move : all_legal_moves())
             {
                 (*this) += move;
                 bool ret = func(*this);
@@ -388,6 +380,20 @@ if (sq2.MOVE() && !belongs_to(square(sq2), Player::First) && CONDITION)      \
 
         bool is_checked(Player player)
         {
+#define CHECK_DIRECTION(START, MOVE, PIECES)    \
+sq = START;                                     \
+while (sq.MOVE())                               \
+{                                               \
+    Piece piece = square(sq);                   \
+    if (belongs_to(piece, player))              \
+        break;                                  \
+    piece = abs(piece);                         \
+    if (PIECES)                                 \
+        return true;                            \
+    if (piece != Piece::None)                   \
+        break;                                  \
+};
+
             Square start, sq;
             start = player == Player::First ? King1 : King2;
             bool other_piece = false;
@@ -646,7 +652,7 @@ if (sq2.MOVE() && !belongs_to(square(sq2), Player::First) && CONDITION)      \
                     table[i] = win;
 
                     bool found = false;
-                    for (auto move : position.get_all_legal_moves())
+                    for (auto move : position.all_legal_moves())
                     {
                         // TODO: This still needs some polishing. It will work only when no flipping needed, ConverterSimple
                         position += move;

@@ -6,5 +6,5 @@ TEST(Algorithm_suite, chess)
 {
 	chess::ChessPosition<false> pos(false);
 
-	MinMax<chess::ChessPosition<false>, chess::Move>::FindBestMove(pos, 4);
+	MinMax<chess::ChessPosition<false>, chess::Move>::FindBestMove(pos, 8);
 }

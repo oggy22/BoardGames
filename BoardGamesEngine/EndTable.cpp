@@ -10,7 +10,7 @@ void check(std::string_view sv)
     char curr = sv[0];
     for (char c : sv)
     {
-        DCHECK(char_to_piece(c) >= char_to_piece(curr))
+        //DCHECK(char_to_piece(c) >= char_to_piece(curr))
     }
 }
 

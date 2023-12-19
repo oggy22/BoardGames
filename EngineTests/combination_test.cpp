@@ -17,6 +17,8 @@ TEST(CombinationTest, CombinationTest_ ## N ## _ ## K)			\
 
 CombinationTest(1, 1)
 
+CombinationTest(4, 2)
+
 CombinationTest(6, 4)
 
 CombinationTest(8, 5)

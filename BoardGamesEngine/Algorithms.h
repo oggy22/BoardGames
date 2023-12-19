@@ -4,8 +4,8 @@
 template <typename T, typename Q>
 concept BoardPosition = requires(T pos, Q move)
 {
-	{   pos.get_all_legal_moves() } -> std::convertible_to<std::experimental::generator<Q>>;
-	{   pos.get_all_legal_moves(move) } -> std::convertible_to<std::experimental::generator<Q>>;
+	{   pos.all_legal_moves() } -> std::convertible_to<std::experimental::generator<Q>>;
+	{   pos.all_legal_moves(move) } -> std::convertible_to<std::experimental::generator<Q>>;
 	{	pos.is_winning_move(move) } -> std::convertible_to<bool>;
 	{	pos.is_legal_move(move) } -> std::convertible_to<bool>;
 
@@ -23,7 +23,7 @@ public:
 	static Move FindBestMove(Pos& position, int depth)
 	{
 		// depth is an even number greater than zero
-		DCHECK(depth & 1 == 0 && depth > 0);
+		DCHECK(depth % 2 == 0 && depth > 0);
 
 		return Find(position, 0, depth).move;
 	}
@@ -40,7 +40,7 @@ public:
 			return { Move(), float(position.Evaluate()) };
 
 		MoveVal max{ Move(), 0 - std::numeric_limits<float>::infinity()};
-		for (auto move1 : position.get_all_legal_moves())
+		for (auto move1 : position.all_legal_moves())
 		{
 			if (position.is_check_mate(Player::Second))
 			{
@@ -49,7 +49,7 @@ public:
 			}
 
 			MoveVal min = { Move(), std::numeric_limits<float>::infinity()};
-			for (auto move2 : position.get_all_legal_moves())
+			for (auto move2 : position.all_legal_moves())
 			{
 				if (position.is_check_mate(Player::First))
 				{
@@ -86,7 +86,7 @@ public:
 //			co_yield killer[curr];
 //		
 //		// Then the rest of the moves
-//		for (Move move : position.get_all_legal_moves())
+//		for (Move move : position.all_legal_moves())
 //			co_yield move;
 //	}
 //	static Move killer[max_depth + 1];

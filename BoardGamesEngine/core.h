@@ -3,13 +3,18 @@
 #include <string>
 #include <experimental/generator>
 
+inline void failure()
+{
+
+}
+
 #define STRINGIFY(x) #x
 #define TOSTRING(x) STRINGIFY(x)
 #define AT __FILE__ ":" TOSTRING(__LINE__)
 #define DCHECK(assertion)           \
 {                                   \
-    /*if (!(assertion))*/               \
-        /*throw(AT);*/                  \
+    if (!(assertion))               \
+        failure();                  \
 }
 
 #define DCHECK_FAIL throw(AT)

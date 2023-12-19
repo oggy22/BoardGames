@@ -165,7 +165,7 @@ public:
 		int n_ = n, k_ = k;
 		for (; n_ > 0; n_--)
 		{
-			SIZE treshold = nk(n_ - 1, k_ - 1);
+ 			SIZE treshold = nk(n_ - 1, k_ - 1);
 			co_yield index < treshold;
 			if (index >= treshold)
 				index -= treshold;
