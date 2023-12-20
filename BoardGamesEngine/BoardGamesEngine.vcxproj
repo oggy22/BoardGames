@@ -173,6 +173,9 @@
     <ClInclude Include="Games\TicTacToe.h" />
     <ClInclude Include="MNKGeneralized.h" />
   </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="NatvisFile.natvis" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

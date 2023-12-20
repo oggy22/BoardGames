@@ -43,4 +43,7 @@
       <UniqueIdentifier>{200447ea-9a58-430f-95be-bb7c5aba5150}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="NatvisFile.natvis" />
+  </ItemGroup>
 </Project>

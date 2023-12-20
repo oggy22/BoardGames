@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?> 
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+	<Type Name="SquareBase&lt;*,*&gt;">
+		<DisplayString>{{ {char('A'+(_square%8))} {(_square/8)+1}}}</DisplayString>
+	</Type>
+	<Type Name="chess::Move">
+		<DisplayString>{{ {_from} {_to} }}</DisplayString>
+	</Type>
+</AutoVisualizer>

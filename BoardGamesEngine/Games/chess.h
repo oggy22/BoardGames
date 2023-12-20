@@ -70,11 +70,10 @@ namespace chess {
         Square() : SquareBase(0) { }
         Square(int n) : SquareBase(n) { }
         Square(int letter, int number) : SquareBase(number * 8 + letter) {}
-        Square(const char s[3])
+        Square(const char s[3]) : Square(s[1] - '1', s[0] - 'A')
         {
             DCHECK(s[0] >= 'A' && s[0] <= 'H');
             DCHECK(s[1] >= '1' && s[1] <= '8');
-            _square = 8 * (s[1] - '1') + (s[0] - 'A');
         }
 
         static std::experimental::generator<Square> all_squares()
@@ -123,6 +122,11 @@ namespace chess {
             return SquareBase::operator--();
         }
 
+        std::string chess_notation() const
+        {
+            return SquareBase<8,8>::chess_notation();
+        }
+
     private:
         /// <summary>
         /// A1=0, B1=1, C1=3, ..., H1=7, A2=8, B2=9, ..., H2=15, ..., H8 = 63  
@@ -148,6 +152,15 @@ namespace chess {
         Square to() { return _to; }
         Piece captured() { return _captured; }
         Piece promotion() { return _promotion; }
+        std::string chess_notation() const
+        {
+            std::string ret;
+            ret.reserve(5);
+            ret += _from.chess_notation();
+            ret += "-";
+            ret += _to.chess_notation();
+            return ret;
+        }
 
     private:
         Square _from, _to;
@@ -245,7 +258,7 @@ namespace chess {
         bool is_legal(Move move) { return square(move.to()) == move.captured(); }
         bool is_legal() { throw ""; }
         Piece& square(Square sq) { return table[sq]; }
-        Piece operator[](Square square) { return table[square]; }
+        Piece operator[](Square square) const { return table[square]; }
         void operator+=(Move move)
         {
             DCHECK(square(move.to()) == move.captured());
@@ -511,7 +524,7 @@ if (sq.MOVE() && abs(square(sq)) == PIECE && !belongs_to(square(sq), player))   
             return ret;
         }
 
-        friend std::ostream& operator<<(std::ostream& os, ChessPosition& position)
+        static friend std::ostream& operator<<(std::ostream& os, const ChessPosition<QPO>& position)
         {
             Square row("H1");
             Square column = row;

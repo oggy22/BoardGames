@@ -22,11 +22,14 @@ TEST(chess, init_position) {
 	}
 
 	int count = 0;
+	std::string all_moves;
 	for (chess::Move move : pos.all_legal_moves())
 	{
+		all_moves += move.chess_notation() + " ";
 		count++;
 	}
-	EXPECT_EQ(count, 20);	// fails with 13
+	EXPECT_EQ(count, 20)	// fails with 13
+		<< all_moves << std::endl;
 }
 
 TEST(chess, invert) {

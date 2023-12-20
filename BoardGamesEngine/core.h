@@ -47,12 +47,12 @@ public:
         DCHECK(0 <= y && y < H);
     }
 
-    int x()
+    int x() const
     {
         return _square % W;
     }
 
-    int y()
+    int y() const
     {
         return _square / W;
     }
@@ -94,7 +94,7 @@ public:
     /// Chess like notation works for bigger boards than 8x8
     /// </summary>
     /// <returns>For example "A1" for the first square</returns>
-    std::string chess_notation()
+    std::string chess_notation() const
     {
         static_assert(W <= 26 && H < 10);
         std::string ret("  ");
