@@ -132,17 +132,16 @@ namespace chess {
         //uint8_t _square;
     };
 
-#define CHECK_SINGLE(START, MOVE, PIECE)                                        \
-sq = START;                                                                     \
-if (sq.MOVE() && abs(square(sq)) == PIECE && !belongs_to(square(sq), player))   \
-    return true;
-
     class Move
     {
     public:
         bool is_valid() { return int(_from) != -1; }
         Move() : _from(-1) { }
-        Move(Square from, Square to, Piece captured = Piece::None) : _from(from), _to(to), _captured(captured) {}
+        Move(Square from, Square to, Piece captured = Piece::None, Piece promotion = Piece::None) :
+            _from(from),
+            _to(to),
+            _captured(captured),
+            _promotion(promotion) {}
         void flip_rows();
         void flip_columns();
         void flip_rows_and_columns();
@@ -248,61 +247,60 @@ if (sq.MOVE() && abs(square(sq)) == PIECE && !belongs_to(square(sq), player))   
         bool is_legal(Move move) { return square(move.to()) == move.captured(); }
         bool is_legal() { throw ""; }
         Piece& square(Square sq) { return table[sq]; }
+        Piece operator[](Square square) { return table[square]; }
         void operator+=(Move move)
         {
             DCHECK(square(move.to()) == move.captured());
             square(move.to()) = square(move.from());
             square(move.from()) = Piece::None;
-            //if (move.to() == King1) King1 = move.from();
-            //if (move.to() == King2) King2 = move.from();
+            if (move.to() == King1) King1 = move.from();
+            if (move.to() == King2) King2 = move.from();
         }
         void operator-=(Move move)
         {
+            DCHECK(square(move.from()) == 0);
             square(move.from()) = square(move.to());
             square(move.to()) = move.captured();
-            //if (King1 == move.from()) King1 = move.to();
-            //if (move.from() == King2) King2 = move.to();
+            if (King1 == move.from()) King1 = move.to();
+            if (move.from() == King2) King2 = move.to();
         }
-        Piece operator[](Square square) { return table[square]; }
-        std::experimental::generator<Move> all_legal_moves()
+        std::experimental::generator<Move> all_legal_moves_played()
         {
 #define MOVE_IN_DIRECTION(MOVE)                                 \
 sq2 = sq;                                                       \
-while (sq2.MOVE() && !belongs_to(square(sq2), Player::First))   \
+while (sq2.MOVE() && !belongs_to(square(sq2), this->turn))      \
 {                                                               \
     Move move(sq, sq2, square(sq2));                            \
     (*this) += move;                                            \
-    bool valid = !is_checked(Player::First);                    \
-    (*this) -= move;                                            \
-    co_yield move;                                              \
+    if (is_checked(this->turn))                                 \
+        (*this) -= move;                                        \
+    else                                                        \
+        co_yield move;                                          \
     if (move.captured() != Piece::None)                         \
         break;                                                  \
 }
 
 #define MOVE_ONCE_WITH_COND(MOVE, CONDITION)                    \
 sq2 = sq;                                                       \
-if (sq2.MOVE() && !belongs_to(square(sq2), Player::First) && CONDITION)      \
+if (sq2.MOVE() && !belongs_to(square(sq2), this->turn) && CONDITION)      \
 {                                                               \
     Move move(sq, sq2, square(sq2));                            \
     (*this) += move;                                            \
-    bool valid = !is_checked(Player::First);                    \
-    (*this) -= move;                                            \
-    co_yield move;                                              \
-    if (move.captured() != Piece::None)                         \
-        break;                                                  \
+    if (is_checked(this->turn))                                 \
+        (*this) -= move;                                        \
+    else                                                        \
+        co_yield move;                                          \
 }
 
 #define MOVE_ONCE(MOVE) MOVE_ONCE_WITH_COND(MOVE, true)
 #define MOVE_PAWN(MOVE) MOVE_ONCE_WITH_COND(MOVE, true)
-
-
 
             //DCHECK(Player::First)
             Square sq;
             do
             {
                 Piece piece = square(sq);
-                if (!belongs_to(piece, Player::First))
+                if (!belongs_to(piece, this->turn))
                     continue;
                 Square sq2;
                 if (piece == Piece::Queen || piece == Piece::Rook)
@@ -322,7 +320,12 @@ if (sq2.MOVE() && !belongs_to(square(sq2), Player::First) && CONDITION)      \
                 if (piece == Piece::Knight)
                 {
                     MOVE_ONCE(move_knight1);
-                    //todo: ...
+                    MOVE_ONCE(move_knight2);
+                    MOVE_ONCE(move_knight3);
+                    MOVE_ONCE(move_knight4);
+                    MOVE_ONCE(move_knight5);
+                    MOVE_ONCE(move_knight6);
+                    MOVE_ONCE(move_knight7);
                     MOVE_ONCE(move_knight8);
                 }
                 if (piece == Piece::King)
@@ -344,11 +347,11 @@ if (sq2.MOVE() && !belongs_to(square(sq2), Player::First) && CONDITION)      \
                 }
             } while (++sq);
         }
+
         bool exists_move(bool (*func)(const ChessPosition&))
         {
-            for (auto move : all_legal_moves())
+            for (auto move : all_legal_moves_played())
             {
-                (*this) += move;
                 bool exists = func(*this);
                 (*this) -= move;
                 if (exists)
@@ -356,11 +359,11 @@ if (sq2.MOVE() && !belongs_to(square(sq2), Player::First) && CONDITION)      \
             }
             return false;
         }
+
         bool for_each_move(bool (*func)(const ChessPosition&))
         {
-            for (auto move : all_legal_moves())
+            for (auto move : all_legal_moves_played())
             {
-                (*this) += move;
                 bool ret = func(*this);
                 (*this) -= move;
                 if (!ret)
@@ -369,14 +372,23 @@ if (sq2.MOVE() && !belongs_to(square(sq2), Player::First) && CONDITION)      \
             return true;
         }
 
-        bool any_legal_moves(Player) { return false; }
-        //{
-        //    for (auto m : get_all_legal_mexperimentaloves())
-        //    {
-        //        co_yield return true;
-        //    }
-        //    co_yield return false;
-        //}
+        std::experimental::generator<Move> all_legal_moves()
+        {
+            for (auto move : all_legal_moves_played())
+            {
+                co_yield move;
+                (*this) -= move;
+            }
+        }
+
+        bool any_legal_moves()
+        {
+            for (auto m : all_legal_moves())
+            {
+                return true;
+            }
+            return false;
+        }
 
         bool is_checked(Player player)
         {
@@ -393,7 +405,6 @@ while (sq.MOVE())                               \
     if (piece != Piece::None)                   \
         break;                                  \
 };
-
             Square start, sq;
             start = player == Player::First ? King1 : King2;
             bool other_piece = false;
@@ -410,9 +421,19 @@ while (sq.MOVE())                               \
             CHECK_DIRECTION(start, move_downleft, piece == Piece::Queen || piece == Piece::Bishop);
             CHECK_DIRECTION(start, move_downright, piece == Piece::Queen || piece == Piece::Bishop);
 
+
+#define CHECK_SINGLE(START, MOVE, PIECE)                                        \
+sq = START;                                                                     \
+if (sq.MOVE() && abs(square(sq)) == PIECE && !belongs_to(square(sq), player))   \
+    return true;
             // Check knights
             CHECK_SINGLE(start, move_knight1, Piece::Knight);
-            //...
+            CHECK_SINGLE(start, move_knight2, Piece::Knight);
+            CHECK_SINGLE(start, move_knight3, Piece::Knight);
+            CHECK_SINGLE(start, move_knight4, Piece::Knight);
+            CHECK_SINGLE(start, move_knight5, Piece::Knight);
+            CHECK_SINGLE(start, move_knight6, Piece::Knight);
+            CHECK_SINGLE(start, move_knight7, Piece::Knight);
             CHECK_SINGLE(start, move_knight8, Piece::Knight);
 
             // Check pawns
@@ -432,7 +453,7 @@ while (sq.MOVE())                               \
         }
 
 
-        bool is_check_mate(Player player = Player::First) { return is_checked(player) && !any_legal_moves(player); }
+        bool is_check_mate(Player player = Player::First) { return is_checked(player) && !any_legal_moves(); }
         bool no_pawns_1and8() { return true; }
         bool is_valid(Player)
         {

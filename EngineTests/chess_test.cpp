@@ -21,11 +21,12 @@ TEST(chess, init_position) {
 			<< "comparing " << square.chess_notation() << " and " << square_flip.chess_notation() << std::endl;
 	}
 
+	int count = 0;
 	for (chess::Move move : pos.all_legal_moves())
 	{
-
-
+		count++;
 	}
+	EXPECT_EQ(count, 20);	// fails with 13
 }
 
 TEST(chess, invert) {
