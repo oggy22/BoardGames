@@ -115,14 +115,12 @@ namespace chess {
 
         bool operator++()
         {
-            _square++;
-            return _square < 64;
+            return SquareBase::operator++();
         }
 
         bool operator--()
         {
-            _square--;
-            return _square >= 0;
+            return SquareBase::operator--();
         }
 
     private:
