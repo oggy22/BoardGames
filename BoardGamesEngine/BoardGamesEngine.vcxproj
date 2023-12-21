@@ -170,6 +170,9 @@
     <ClInclude Include="Games\checkers.h" />
     <ClInclude Include="Games\chess.h" />
     <ClInclude Include="Games\Connect4.h" />
+    <ClInclude Include="Games\Gomoku.h" />
+    <ClInclude Include="Games\MNK.h" />
+    <ClInclude Include="Games\MNKGeneralized.h" />
     <ClInclude Include="Games\TicTacToe.h" />
     <ClInclude Include="MNKGeneralized.h" />
   </ItemGroup>

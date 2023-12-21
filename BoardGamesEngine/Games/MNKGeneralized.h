@@ -39,10 +39,11 @@ template <
 class MNK : public MNKGeneralized<W, DimProp::None, H, DimProp::None, R, false, false, false>
 {
 public:
-	std::experimental::generator<SquareBase<W, H>> get_all_legal_moves()
+	std::experimental::generator<SquareBase<W, H>> get_all_squares() const
 	{
 		for (int i = 0; i < W * H; i++)
-			co_yield SquareBase<W, H>(i);
+			if (this->get(i) == Field::Empty)
+				co_yield SquareBase<W, H>(i);
 	}
 };
 
@@ -54,4 +55,30 @@ template <
 class MNKGravity : public MNKGeneralized<W, DimProp::None, H, DimProp::Gravity, R, false, false, false>
 {
 
+};
+
+template<int W, int H>
+struct FieldsOptimized {
+	static int distance(SquareBase<W, H> sq)
+	{
+		return
+			abs(W - 1 - 2*sq.x()) +
+			abs(H - 1 - 2*sq.y());
+	}
+
+	constexpr FieldsOptimized() : arr()
+	{
+		// Initialize
+		for (int i = 0; i < W * H; ++i)
+			arr[i] = SquareBase<W, H>(i);
+
+		// Sort them
+		for (int i = 0; i < W * H; ++i)
+			for (int j = i + 1; j < W * H; ++j)
+			{
+				if (distance(arr[i]) > distance(arr[j]))
+					std::swap(arr[i], arr[j]);
+			}
+	}
+	static SquareBase<W,H> arr[W * H];
 };

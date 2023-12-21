@@ -2,7 +2,7 @@
 
 #include "MNKGeneralized.h"
 
-class Connect4 : public MNKGravity<7, 6, 4>
+class Gomoku : public MNKGeneralized<7, 6, 4>
 {
 
 };

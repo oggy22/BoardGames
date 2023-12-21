@@ -37,6 +37,15 @@
     <ClInclude Include="Games\Connect4.h">
       <Filter>Games</Filter>
     </ClInclude>
+    <ClInclude Include="Games\Gomoku.h">
+      <Filter>Games</Filter>
+    </ClInclude>
+    <ClInclude Include="Games\MNKGeneralized.h">
+      <Filter>Games</Filter>
+    </ClInclude>
+    <ClInclude Include="Games\MNK.h">
+      <Filter>Games</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Games">
