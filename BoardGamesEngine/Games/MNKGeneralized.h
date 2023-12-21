@@ -250,6 +250,17 @@ class MNK : public MNKGeneralized<W, DimProp::None, H, DimProp::None, R, false, 
 {
 public:
 	static FieldsOptimized<W, H> fo;
+
+	std::experimental::generator<Move<W, H>> all_legal_moves() const
+	{
+		for (SquareBase<W, H> sq : this->empty_squares())
+		{
+			Move<W, H> move;
+			move.square = sq;
+			move.field = this->turn == Player::First ? Field::X : Field::O;
+			co_yield move;
+		}
+	}
 };
 
 template <
