@@ -69,6 +69,7 @@ public:
 
     SquareBase flip_horizontally() { return Square(W-x()-1, y()); }
     SquareBase flip_vertifaclly() { return Square(x(), H-y() - 1); }
+    SquareBase rotate_180() { return Square(W*H - 1 - _square); }
 
     bool operator++()
     {
@@ -90,6 +91,15 @@ public:
         return _square < W * H;
     }
 
+    static std::experimental::generator<SquareBase<W, H>> all_squares()
+    {
+        SquareBase<W, H> sq(0);
+        do
+        {
+            co_yield sq;
+        } while (++sq);
+    }
+
     /// <summary>
     /// Chess like notation works for bigger boards than 8x8
     /// </summary>
@@ -104,8 +114,8 @@ public:
     }
 
 protected:
-    static_assert(W * H < 1 << 8);
-    uint8_t _square;
+    static_assert(W * H < (1 << 16));
+    uint16_t _square;
 };
 
 template<int W, int H, typename piece_t>
@@ -114,9 +124,15 @@ class BoardBase
 protected:
     Player turn;
     piece_t table[W * H];
+
+    piece_t& operator[](SquareBase<W, H> sq)
+    {
+        return table[int(sq)];
+    }
 public:
     BoardBase() : turn(Player::First) { }
-    piece_t& operator[](SquareBase<W, H> sq)
+
+    piece_t operator[](SquareBase<W, H> sq) const
     {
         return table[int(sq)];
     }
