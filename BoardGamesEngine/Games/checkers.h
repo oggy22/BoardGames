@@ -64,12 +64,12 @@ public:
 	std::experimental::generator<Square> forward_squares(Player player, Square sq)
 	{
 		Square sq2 = sq;
-		if (turn == Player::First)
+		if (turn() == Player::First)
 		{
 			sq2 = sq; if (sq2.move_upleft() && (*this)[sq2] == Piece::None) co_yield sq2;
 			sq2 = sq; if (sq2.move_upright() && (*this)[sq2] == Piece::None) co_yield sq2;
 		}
-		else if (turn == Player::Second)
+		else if (turn() == Player::Second)
 		{
 			sq2 = sq; if (sq2.move_downleft() && (*this)[sq2] == Piece::None) co_yield sq2;
 			sq2 = sq; if (sq2.move_downright() && (*this)[sq2] == Piece::None) co_yield sq2;
@@ -92,12 +92,12 @@ if (sq2.move() && belongs_to((*this)[sq2], oponent(player)))		\
 }
 
 		Square sq2 = sq;
-		if (turn == Player::First)
+		if (turn() == Player::First)
 		{
 			JUMP_MOVE(move_upleft);
 			JUMP_MOVE(move_upright);
 		}
-		else if (turn == Player::Second)
+		else if (turn() == Player::Second)
 		{
 			JUMP_MOVE(move_downleft);
 			JUMP_MOVE(move_downright);
@@ -126,10 +126,10 @@ if (sq2.move() && belongs_to((*this)[sq2], oponent(player)))		\
 	{
 		for (Square sq : get_all_legal_squares())
 		{
-			if (!belongs_to((*this)[sq], turn))
+			if (!belongs_to((*this)[sq], turn()))
 				continue;
 			
-			for (Square sq2 : forward_squares(turn, sq))
+			for (Square sq2 : forward_squares(turn(), sq))
 			{
 				co_yield Move(sq, sq2);
 			}

@@ -25,7 +25,10 @@ public:
 		// depth is an even number greater than zero
 		DCHECK(depth % 2 == 0 && depth > 0);
 
-		return Find(position, 0, depth).move;
+		if (position.turn() == Player::First)
+			return Find<Player::First>(position, 0, depth).move;
+		else
+			return Find<Player::Second>(position, 0, depth).move;
 	}
 
 	struct MoveVal
@@ -34,30 +37,30 @@ public:
 		float val;
 	};
 
+private:
+	template <Player player>
 	static MoveVal Find(Pos& position, int curr_depth, int max_depth)
 	{
+		DCHECK(position.turn() == player);
 		if (curr_depth = max_depth)
 			return { Move(), float(position.Evaluate()) };
 
+		bool any_moves1 = false;
 		MoveVal max{ Move(), 0 - std::numeric_limits<float>::infinity()};
-		for (auto move1 : position.all_legal_moves())
+		for (auto move1 : position.all_legal_moves_played())
 		{
-			if (position.is_check_mate(Player::Second))
-			{
-				max = { move1, std::numeric_limits<float>::infinity() };
-				break;
-			}
+			any_moves1 = true;
 
+			bool any_moves2 = false;
 			MoveVal min = { Move(), std::numeric_limits<float>::infinity()};
-			for (auto move2 : position.all_legal_moves())
+
+			for (auto move2 : position.all_legal_moves_played())
 			{
-				if (position.is_check_mate(Player::First))
-				{
-					min = { move2, 0 - std::numeric_limits<float>::infinity() };
-					break;
-				}
+				any_moves2 = true;
 				
-				MoveVal curr = Find(position, curr_depth + 2, max_depth);
+				MoveVal curr = Find<player>(position, curr_depth + 2, max_depth);
+				position -= move2;
+
 				if (curr.val < min.val)
 					min = curr;
 
@@ -65,6 +68,16 @@ public:
 				if (min.val <= max.val)
 					break;
 			}
+
+			if (!any_moves2)
+			{
+				max = MoveVal{
+					move1,
+					position.is_winning_move(max.move) ? std::numeric_limits<float>::infinity() : 0
+				};
+			}
+			position -= move1;
+
 			if (min.val > max.val)
 				max = min;
 		}
