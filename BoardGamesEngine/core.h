@@ -30,7 +30,10 @@ enum class Player : int
     Second = -1
 };
 
-Player oponent(Player player);
+Player constexpr oponent(Player player)
+{
+    return Player(0 - int(player));
+}
 
 template<int W, int H>
 class SquareBase
@@ -121,16 +124,35 @@ protected:
 template<int W, int H, typename piece_t>
 class BoardBase
 {
+    Player _turn;
+    int ply;
 protected:
-    Player turn;
     piece_t table[W * H];
 
     piece_t& operator[](SquareBase<W, H> sq)
     {
         return table[int(sq)];
     }
+
+    void move()
+    {
+		_turn = oponent(_turn);
+		ply++;
+	}
+
+    void reverse_move()
+    {
+        ply++;
+        DCHECK(ply >= 0);
+    }
+
+    void invert()
+    {
+        _turn = oponent(_turn);
+    }
 public:
-    BoardBase() : turn(Player::First) { }
+    Player turn() const { return _turn; }
+    BoardBase() : _turn(Player::First), ply(0) { }
 
     piece_t operator[](SquareBase<W, H> sq) const
     {
@@ -181,6 +203,7 @@ public:
 /// </summary>
 class TableEntry
 {
+    static_assert(std::numeric_limits<int8_t>::min() == 0 - std::numeric_limits<int8_t>::max() - 1);
     const int8_t Open = 0;
     const int8_t CheckMate = std::numeric_limits<int8_t>::min();
     TableEntry(int8_t data) : data(data) { }
