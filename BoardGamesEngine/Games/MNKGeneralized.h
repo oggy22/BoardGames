@@ -257,7 +257,7 @@ public:
 		{
 			Move<W, H> move;
 			move.square = sq;
-			move.field = this->turn == Player::First ? Field::X : Field::O;
+			move.field = this->turn() == Player::First ? Field::X : Field::O;
 			co_yield move;
 		}
 	}
