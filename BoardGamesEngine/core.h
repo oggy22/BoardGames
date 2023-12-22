@@ -30,7 +30,10 @@ enum class Player : int
     Second = -1
 };
 
-Player oponent(Player player);
+Player constexpr oponent(Player player)
+{
+    return Player(0 - int(player));
+}
 
 template<int W, int H>
 class SquareBase

@@ -15,6 +15,43 @@ concept BoardPosition = requires(T pos, Q move)
 
 //enum type {MinMax, AlphaBetaCutting, Killer};
 
+class EvalValue
+{
+	float value;
+public:
+	EvalValue(float val) : value(val) {}
+
+	template <Player player>
+	static constexpr EvalValue Win()
+	{
+		if constexpr (player == Player::First)
+			return EvalValue(std::numeric_limits<float>::infinity());
+
+		if constexpr (player == Player::Second)
+			return EvalValue(-std::numeric_limits<float>::infinity());
+	}
+
+	template <Player player>
+	static constexpr EvalValue Lose()
+	{
+		if constexpr (player == Player::First)
+			return EvalValue(-std::numeric_limits<float>::infinity());
+
+		if constexpr (player == Player::Second)
+			return EvalValue(std::numeric_limits<float>::infinity());
+	}
+
+	template <Player player>
+	bool is_better(EvalValue other)
+	{
+		if constexpr (player == Player::First)
+			return value > other.value;
+
+		if constexpr (player == Player::Second)
+			return value < other.value;
+	}
+};
+
 template <typename Pos, typename Move>
 //requires BoardPosition<Pos, Move>
 class MinMax
@@ -34,54 +71,58 @@ public:
 	struct MoveVal
 	{
 		Move move;
-		float val;
+		EvalValue val;
 	};
 
 private:
-	template <Player player>
+	template <Player player1>
 	static MoveVal Find(Pos& position, int curr_depth, int max_depth)
 	{
-		DCHECK(position.turn() == player);
+		constexpr Player player2 = oponent(player1);
+		DCHECK(position.turn() == player1);
 		if (curr_depth = max_depth)
 			return { Move(), float(position.Evaluate()) };
 
 		bool any_moves1 = false;
-		MoveVal max{ Move(), 0 - std::numeric_limits<float>::infinity()};
+		MoveVal best1 { Move(), EvalValue::Lose<player1>() };
 		for (auto move1 : position.all_legal_moves_played())
 		{
 			any_moves1 = true;
 
 			bool any_moves2 = false;
-			MoveVal min = { Move(), std::numeric_limits<float>::infinity()};
+			MoveVal best2 { Move(), EvalValue::Lose<player2>() };
 
 			for (auto move2 : position.all_legal_moves_played())
 			{
 				any_moves2 = true;
 				
-				MoveVal curr = Find<player>(position, curr_depth + 2, max_depth);
+				MoveVal curr = Find<player1>(position, curr_depth + 2, max_depth);
 				position -= move2;
 
-				if (curr.val < min.val)
-					min = curr;
+				if (curr.val.is_better<player2>(best2.val))
+					best2 = curr;
 
 				// Cut short
-				if (min.val <= max.val)
+				if (!best2.val.is_better<player2>(best1.val))
 					break;
+
+				EvalValue val1(0);
+				val1.is_better<player1>(val1);
 			}
 
 			if (!any_moves2)
 			{
-				max = MoveVal{
+				best2 = MoveVal{
 					move1,
-					position.is_winning_move(max.move) ? std::numeric_limits<float>::infinity() : 0
+					position.is_winning_move(best1.move) ? EvalValue::Win<player1>() : 0
 				};
 			}
 			position -= move1;
 
-			if (min.val > max.val)
-				max = min;
+			if (best2.val.is_better<player2>(best1.val))
+				best1 = best2;
 		}
-		return max;
+		return best1;
 	}
 };
 
