@@ -171,7 +171,7 @@ public:
 		return true;
 	}
 
-	bool is_winning_move(Move<W, H> move)
+	bool easycheck_winning_move(Move<W, H> move)
 	{
 		SquareBase<W, H> sq;
 

@@ -6,7 +6,7 @@ concept BoardPosition = requires(T pos, Q move)
 {
 	{   pos.all_legal_moves() } -> std::convertible_to<std::experimental::generator<Q>>;
 	{   pos.all_legal_moves(move) } -> std::convertible_to<std::experimental::generator<Q>>;
-	{	pos.is_winning_move(move) } -> std::convertible_to<bool>;
+	{	pos.easycheck_winning_move(move) } -> std::convertible_to<bool>;
 	{	pos.is_legal_move(move) } -> std::convertible_to<bool>;
 
 	//{   T::size(EndTable(std::string())) } -> std::convertible_to<SIZE>;
@@ -87,6 +87,13 @@ private:
 		MoveVal best1 { Move(), EvalValue::Lose<player1>() };
 		for (auto move1 : position.all_legal_moves_played())
 		{
+			if (position.easycheck_winning_move(best1.move))
+			{
+				best1 = { move1, EvalValue::Win<player1>() };
+				position -= move1;
+				break;
+			}
+
 			any_moves1 = true;
 
 			bool any_moves2 = false;
@@ -94,6 +101,13 @@ private:
 
 			for (auto move2 : position.all_legal_moves_played())
 			{
+				if (position.easycheck_winning_move(best2.move))
+				{
+					best2 = { move2, EvalValue::Win<player2>() };
+					position -= move2;
+					break;
+				}
+
 				any_moves2 = true;
 				
 				MoveVal curr = Find<player1>(position, curr_depth + 2, max_depth);
@@ -114,7 +128,7 @@ private:
 			{
 				best2 = MoveVal{
 					move1,
-					position.is_winning_move(best1.move) ? EvalValue::Win<player1>() : 0
+					position.easycheck_winning_move(best1.move) ? EvalValue::Win<player1>() : 0
 				};
 			}
 			position -= move1;

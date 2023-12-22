@@ -112,6 +112,13 @@ namespace chess {
 
         operator int() { return int(_square); }
 
+        int king_distance(Square sq)
+        {
+            int dx = std::abs(x() - sq.x());
+            int dy = std::abs(y() - sq.y());
+            return std::max(dx, dy);
+        }
+
         bool operator++()
         {
             return SquareBase::operator++();
@@ -120,6 +127,11 @@ namespace chess {
         bool operator--()
         {
             return SquareBase::operator--();
+        }
+
+        void operator+=(int inc)
+        {
+            _square += inc;
         }
 
         std::string chess_notation() const
@@ -214,6 +226,57 @@ namespace chess {
             }
         }
 
+        ChessPosition(std::string FEN)
+        {
+            Square sq(0);
+            for (char c : FEN)
+            {
+                if (c == '//')
+                    continue;
+
+                if (c >= '1' && c <= '8')
+                {
+                    sq += (c - '0');
+                    continue;
+                }
+                char upper_c = toupper(c);
+                Piece piece = char_to_piece(upper_c);
+                if (upper_c != c)
+                    piece = 0 - piece;
+
+                if (c == 'K') King1 = sq;
+                if (c == 'k') King2 = sq;
+            
+                table[sq] = piece;
+            }
+            this->flip_rows();
+        }
+
+        std::string fen()
+        {
+            this->flip_rows();
+            Square sq(0);
+            std::string fen;
+            do
+            {
+                if (table[sq] != Piece::None)
+                {
+                    fen += Piece_to_char(table[sq]);
+                }
+                else
+                {
+                    if (fen.length() > 0 && '1' <= fen.back() && fen.back() <= '7')
+                        fen.back()++;
+                    else
+                        fen += '1';
+                }
+
+                if (sq.x() == 7)
+                    fen += '/';
+            } while (++sq);
+            this->flip_rows();
+        }
+
         int Evaluate() const { return 0; }
         
         bool operator==(const ChessPosition<QPO>& other) const
@@ -267,17 +330,18 @@ namespace chess {
             DCHECK(square(move.to()) == move.captured());
             square(move.to()) = square(move.from());
             square(move.from()) = Piece::None;
-            if (move.from() == King1) King1 = move.to();
-            if (move.from() == King2) King2 = move.to();
+            if (move.to() == King1) King1 = move.to();
+            if (move.to() == King2) King2 = move.to();
             BoardBase::move();
         }
+
         void operator-=(Move move)
         {
             DCHECK(square(move.from()) == 0);
             square(move.from()) = square(move.to());
             square(move.to()) = move.captured();
-            if (King1 == move.from()) King1 = move.to();
-            if (move.from() == King2) King2 = move.to();
+            if (move.from() == King1) King1 = move.from();
+            if (move.from() == King2) King2 = move.from();
             BoardBase::reverse_move();
         }
         std::experimental::generator<Move> all_legal_moves_played()
@@ -302,7 +366,7 @@ if (sq2.MOVE() && !belongs_to(square(sq2), this->turn()) && CONDITION)      \
 {                                                               \
     Move move(sq, sq2, square(sq2));                            \
     (*this) += move;                                            \
-    if (is_checked(this->turn()))                                \
+    if (is_checked(this->turn()))                               \
         (*this) -= move;                                        \
     else                                                        \
         co_yield move;                                          \
@@ -346,20 +410,31 @@ if (sq2.MOVE() && !belongs_to(square(sq2), this->turn()) && CONDITION)      \
                 }
                 if (piece == Piece::King)
                 {
-                    MOVE_ONCE(move_up);
-                    MOVE_ONCE(move_down);
-                    MOVE_ONCE(move_left);
-                    MOVE_ONCE(move_right);
-                    MOVE_ONCE(move_upleft);
-                    MOVE_ONCE(move_upright);
-                    MOVE_ONCE(move_downleft);
-                    MOVE_ONCE(move_downright);
+                    Square other_king = this->turn() == Player::First ? King2 : King1;
+
+                    MOVE_ONCE_WITH_COND(move_up,      sq2.king_distance(other_king) >= 2);
+                    MOVE_ONCE_WITH_COND(move_down,    sq2.king_distance(other_king) >= 2);
+                    MOVE_ONCE_WITH_COND(move_left,    sq2.king_distance(other_king) >= 2);
+                    MOVE_ONCE_WITH_COND(move_right,   sq2.king_distance(other_king) >= 2);
+                    MOVE_ONCE_WITH_COND(move_upleft,  sq2.king_distance(other_king) >= 2);
+                    MOVE_ONCE_WITH_COND(move_upright, sq2.king_distance(other_king) >= 2);
+                    MOVE_ONCE_WITH_COND(move_downleft,sq2.king_distance(other_king) >= 2);
+                    MOVE_ONCE_WITH_COND(move_downright,sq2.king_distance(other_king) >= 2);
                 }
                 if (piece == Piece::Pawn)
                 {
-                    MOVE_ONCE_WITH_COND(move_up, square(sq2) == Piece::None);
-                    MOVE_ONCE_WITH_COND(move_upleft, square(sq2) != Piece::None);
-                    MOVE_ONCE_WITH_COND(move_upright, square(sq2) != Piece::None);
+                    if (this->turn() == Player::First)
+                    {
+                        MOVE_ONCE_WITH_COND(move_up, square(sq2) == Piece::None);
+                        MOVE_ONCE_WITH_COND(move_upleft, square(sq2) != Piece::None);
+                        MOVE_ONCE_WITH_COND(move_upright, square(sq2) != Piece::None);
+                    }
+                    else
+                    {
+                        MOVE_ONCE_WITH_COND(move_down, square(sq2) == Piece::None);
+                        MOVE_ONCE_WITH_COND(move_downleft, square(sq2) != Piece::None);
+                        MOVE_ONCE_WITH_COND(move_downright, square(sq2) != Piece::None);
+                    }
                 }
             } while (++sq);
         }
@@ -468,11 +543,9 @@ if (sq.MOVE() && abs(square(sq)) == PIECE && !belongs_to(square(sq), player))   
             return false;
         }
 
-        bool is_winning_move(Move move)
+        bool easycheck_winning_move(Move move)
         {
-            DCHECK(!any_legal_moves());
-            // TODO:
-            return is_checked(turn());
+            return false;
         }
 
         bool is_check_mate(Player player = Player::First) { return is_checked(player) && !any_legal_moves(); }
