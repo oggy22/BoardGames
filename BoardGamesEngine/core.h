@@ -1,7 +1,9 @@
 #pragma once
 
-#include <string>
 #include <experimental/generator>
+#include <random>
+#include <string>
+#include <vector>
 
 inline void failure()
 {
@@ -142,6 +144,7 @@ protected:
 
     void reverse_move()
     {
+        _turn = oponent(_turn);
         ply++;
         DCHECK(ply >= 0);
     }
@@ -248,3 +251,17 @@ private:
     int8_t data;
 };
 
+template <typename Board, typename Move>
+Move random_move(Board board)
+{
+    std::vector<Move> moves;
+    for (Move move : board.all_legal_moves())
+    {
+        moves.push_back(move);
+    }
+
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution dist(0, moves.size() - 1);
+    return moves[dist(gen)];
+}

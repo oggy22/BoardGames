@@ -40,12 +40,22 @@ namespace chess {
     {
         switch (piece)
         {
+        case Piece::None: return ' ';
+
         case Piece::King: return 'K';
         case Piece::Queen: return 'Q';
         case Piece::Rook: return 'R';
         case Piece::Bishop: return 'B';
         case Piece::Knight: return 'N';
         case Piece::Pawn: return 'P';
+
+        case Piece::OtherKing: return 'k';
+        case Piece::OtherQueen: return 'q';
+        case Piece::OtherRook: return 'r';
+        case Piece::OtherBishop: return 'b';
+        case Piece::OtherKnight: return 'n';
+        case Piece::OtherPawn: return 'p';
+
         default: DCHECK_FAIL;
         }
     }
@@ -60,6 +70,14 @@ namespace chess {
         case 'B': return Piece::Bishop;
         case 'N': return Piece::Knight;
         case 'P': return Piece::Pawn;
+
+        case 'k': return Piece::OtherKing;
+        case 'q': return Piece::OtherQueen;
+        case 'r': return Piece::OtherRook;
+        case 'b': return Piece::OtherBishop;
+        case 'n': return Piece::OtherKnight;
+        case 'p': return Piece::OtherPawn;
+
         default: DCHECK_FAIL;
         }
     }
@@ -69,8 +87,9 @@ namespace chess {
     public:
         Square() : SquareBase(0) { }
         Square(int n) : SquareBase(n) { }
-        Square(int letter, int number) : SquareBase(number * 8 + letter) {}
-        Square(const char s[3]) : Square(s[1] - '1', s[0] - 'A')
+        Square(int x, int y) : SquareBase(y * 8 + x) {}
+        Square(char letter, char number) : SquareBase(int(letter -'A'), int(number - '1')) { }
+        Square(const char s[3]) : Square(s[0] - 'A', s[1] - '1')
         {
             DCHECK(s[0] >= 'A' && s[0] <= 'H');
             DCHECK(s[1] >= '1' && s[1] <= '8');
@@ -171,6 +190,7 @@ namespace chess {
             ret += _from.chess_notation();
             ret += "-";
             ret += _to.chess_notation();
+            ret += ""; // captured
             return ret;
         }
 
@@ -195,6 +215,8 @@ namespace chess {
             if (only_kings)
                 return;
 
+            table[Square("D1")] = Piece::Queen;
+            table[Square("D8")] = Piece::OtherQueen;
 
             // Pawns
             for (Square pw("A2"), pb("A7"); ;)
@@ -231,23 +253,29 @@ namespace chess {
             Square sq(0);
             for (char c : FEN)
             {
-                if (c == '//')
+                if (c == '/')
                     continue;
 
                 if (c >= '1' && c <= '8')
                 {
-                    sq += (c - '0');
+                    int count = c - '0';
+                    for (int i = 0; i < count; i++)
+                    {
+                        table[sq] = Piece::None;
+                        ++sq;
+                    }
                     continue;
                 }
                 char upper_c = toupper(c);
                 Piece piece = char_to_piece(upper_c);
                 if (upper_c != c)
-                    piece = 0 - piece;
+                    piece = Piece(0 - piece);
 
                 if (c == 'K') King1 = sq;
                 if (c == 'k') King2 = sq;
             
                 table[sq] = piece;
+                ++sq;
             }
             this->flip_rows();
         }
@@ -275,9 +303,24 @@ namespace chess {
                     fen += '/';
             } while (++sq);
             this->flip_rows();
+            
+            return fen.substr(0, fen.length()-1);
         }
 
         int Evaluate() const { return 0; }
+
+        bool play_if_legal(Move move)
+        {
+            if (move.captured() != table[move.to()])
+                return false;
+            (*this) += move;
+            if (!is_checked(turn()))
+                return true;
+            
+            // If still checked revert the move and return false
+            (*this) -= move;
+            return false;
+        }
         
         bool operator==(const ChessPosition<QPO>& other) const
         {
@@ -346,40 +389,76 @@ namespace chess {
         }
         std::experimental::generator<Move> all_legal_moves_played()
         {
+#define PLAY_AND_YIELD  \
+(*this) += move;        \
+if (is_checked(player)) \
+    (*this) -= move;    \
+else                    \
+    co_yield move;
+
+
 #define MOVE_IN_DIRECTION(MOVE)                                 \
 sq2 = sq;                                                       \
-while (sq2.MOVE() && !belongs_to(square(sq2), this->turn()))    \
+while (sq2.MOVE() && !belongs_to(square(sq2), player))          \
 {                                                               \
     Move move(sq, sq2, square(sq2));                            \
-    (*this) += move;                                            \
-    if (is_checked(this->turn()))                               \
-        (*this) -= move;                                        \
-    else                                                        \
-        co_yield move;                                          \
+    PLAY_AND_YIELD                                              \
     if (move.captured() != Piece::None)                         \
         break;                                                  \
 }
 
 #define MOVE_ONCE_WITH_COND(MOVE, CONDITION)                    \
 sq2 = sq;                                                       \
-if (sq2.MOVE() && !belongs_to(square(sq2), this->turn()) && CONDITION)      \
+if (sq2.MOVE() && !belongs_to(square(sq2), player) && CONDITION)      \
 {                                                               \
     Move move(sq, sq2, square(sq2));                            \
-    (*this) += move;                                            \
-    if (is_checked(this->turn()))                               \
-        (*this) -= move;                                        \
-    else                                                        \
-        co_yield move;                                          \
+    PLAY_AND_YIELD                                              \
 }
 
 #define MOVE_ONCE(MOVE) MOVE_ONCE_WITH_COND(MOVE, true)
 #define MOVE_PAWN(MOVE) MOVE_ONCE_WITH_COND(MOVE, true)
+
+#define MOVE_PAWN2                                                                              \
+Square sqF = sq, sqFF = sq;                                                                     \
+if (this->turn() == Player::First)                                                              \
+    sqF.move_up();                                                                              \
+else\
+    sqF.move_down();                                                                            \
+if (square(sqF) == Piece::None)                                                                 \
+{                                                                                               \
+    Move move(sq, sqF, Piece::None, sqF.y() == 0 || sqF.y() == 7 ? Piece::Queen : Piece::None); \
+    PLAY_AND_YIELD                                                                              \
+}                                                                                               \
+Square sqL = sqF, sqR = sqF;                                                                    \
+if (sqL.move_left() && belongs_to(square(sqL), oponent(player)))                                \
+{                                                                                               \
+    Move move(sq, sqL, Piece::None, sqL.y() == 0 || sqL.y() == 7 ? Piece::Queen : Piece::None); \
+    PLAY_AND_YIELD                                                                              \
+}                                                                                               \
+if (sqR.move_right() && belongs_to(square(sqR), oponent(player)))                               \
+{                                                                                               \
+    Move move(sq, sqL, Piece::None, sqL.y() == 0 || sqL.y() == 7 ? Piece::Queen : Piece::None); \
+    PLAY_AND_YIELD                                                                              \
+}                                                                                               \
+if (square(sqF) == Piece::None)                                                                 \
+{                                                                                               \
+    if (sqF.y() = 2 && player == Player::First && sqF.move_up() && square(sqF) == Piece::None)  \
+    {                                                                                           \
+        PLAY_AND_YIELD                                                                          \
+    }                                                                                           \
+    if (sqF.y() = 5 && player == Player::Second && sqF.move_down() && square(sqF) == Piece::None)\
+    {                                                                                           \
+        PLAY_AND_YIELD                                                                          \
+    }                                                                                           \
+}
 
             //DCHECK(Player::First)
             Square sq;
             do
             {
                 Piece piece = square(sq);
+                Player player = this->turn();
+                Player other_player = oponent(player);
                 if (!belongs_to(piece, this->turn()))
                     continue;
                 Square sq2;
@@ -423,17 +502,39 @@ if (sq2.MOVE() && !belongs_to(square(sq2), this->turn()) && CONDITION)      \
                 }
                 if (piece == Piece::Pawn)
                 {
+                    Square sqF = sq, sqFF = sq;
                     if (this->turn() == Player::First)
-                    {
-                        MOVE_ONCE_WITH_COND(move_up, square(sq2) == Piece::None);
-                        MOVE_ONCE_WITH_COND(move_upleft, square(sq2) != Piece::None);
-                        MOVE_ONCE_WITH_COND(move_upright, square(sq2) != Piece::None);
-                    }
+                        sqF.move_up();
                     else
+                        sqF.move_down();
+                    if (square(sqF) == Piece::None)
                     {
-                        MOVE_ONCE_WITH_COND(move_down, square(sq2) == Piece::None);
-                        MOVE_ONCE_WITH_COND(move_downleft, square(sq2) != Piece::None);
-                        MOVE_ONCE_WITH_COND(move_downright, square(sq2) != Piece::None);
+                        Move move(sq, sqF, Piece::None, sqF.y() == 0 || sqF.y() == 7 ? Piece::Queen : Piece::None); // todo: promotion white and black
+                        PLAY_AND_YIELD
+                    }
+                    Square sqL = sqF, sqR = sqF;
+                    if (sqL.move_left() && belongs_to(square(sqL), oponent(player)))
+                    {
+                        Move move(sq, sqL, Piece::None, sqL.y() == 0 || sqL.y() == 7 ? Piece::Queen : Piece::None); // todo: promotion white and black
+                        PLAY_AND_YIELD
+                    }
+                    if (sqR.move_right() && belongs_to(square(sqR), oponent(player)))
+                    {
+                        Move move(sq, sqL, Piece::None, sqL.y() == 0 || sqL.y() == 7 ? Piece::Queen : Piece::None); // todo: promotion white and black
+                        PLAY_AND_YIELD
+                    }
+                    if (square(sqF) == Piece::None)
+                    {
+                        if (sqF.y() == 2 && player == Player::First && sqF.move_up() && square(sqF) == Piece::None)
+                        {
+                            Move move(sq, sqF, Piece::None);
+                            PLAY_AND_YIELD
+                        } else
+                        if (sqF.y() == 5 && player == Player::Second && sqF.move_down() && square(sqF) == Piece::None)
+                        {
+                            Move move(sq, sqF, Piece::None);
+                            PLAY_AND_YIELD
+                        }
                     }
                 }
             } while (++sq);
@@ -467,8 +568,8 @@ if (sq2.MOVE() && !belongs_to(square(sq2), this->turn()) && CONDITION)      \
         {
             for (auto move : all_legal_moves_played())
             {
-                co_yield move;
                 (*this) -= move;
+                co_yield move;
             }
         }
 
@@ -555,7 +656,11 @@ if (sq.MOVE() && abs(square(sq)) == PIECE && !belongs_to(square(sq), player))   
             return is_checked(Player::Second) && no_pawns_1and8();
         }
 
-        void flip_rows();
+        void flip_rows()
+        {
+            Square bottom(0, 0), top;
+        }
+
         void flip_columns();
         void flip_rows_and_columns();
         void flip_board();
