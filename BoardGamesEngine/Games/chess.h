@@ -28,7 +28,7 @@ namespace chess {
 
     static Piece abs(Piece piece)
     {
-        return (Piece)(0 - piece);
+        return piece > 0 ? piece : Piece(0-piece);
     }
 
     static bool belongs_to(Piece piece, Player player)
@@ -418,49 +418,16 @@ if (sq2.MOVE() && !belongs_to(square(sq2), player) && CONDITION)      \
 #define MOVE_ONCE(MOVE) MOVE_ONCE_WITH_COND(MOVE, true)
 #define MOVE_PAWN(MOVE) MOVE_ONCE_WITH_COND(MOVE, true)
 
-#define MOVE_PAWN2                                                                              \
-Square sqF = sq, sqFF = sq;                                                                     \
-if (this->turn() == Player::First)                                                              \
-    sqF.move_up();                                                                              \
-else\
-    sqF.move_down();                                                                            \
-if (square(sqF) == Piece::None)                                                                 \
-{                                                                                               \
-    Move move(sq, sqF, Piece::None, sqF.y() == 0 || sqF.y() == 7 ? Piece::Queen : Piece::None); \
-    PLAY_AND_YIELD                                                                              \
-}                                                                                               \
-Square sqL = sqF, sqR = sqF;                                                                    \
-if (sqL.move_left() && belongs_to(square(sqL), oponent(player)))                                \
-{                                                                                               \
-    Move move(sq, sqL, Piece::None, sqL.y() == 0 || sqL.y() == 7 ? Piece::Queen : Piece::None); \
-    PLAY_AND_YIELD                                                                              \
-}                                                                                               \
-if (sqR.move_right() && belongs_to(square(sqR), oponent(player)))                               \
-{                                                                                               \
-    Move move(sq, sqL, Piece::None, sqL.y() == 0 || sqL.y() == 7 ? Piece::Queen : Piece::None); \
-    PLAY_AND_YIELD                                                                              \
-}                                                                                               \
-if (square(sqF) == Piece::None)                                                                 \
-{                                                                                               \
-    if (sqF.y() = 2 && player == Player::First && sqF.move_up() && square(sqF) == Piece::None)  \
-    {                                                                                           \
-        PLAY_AND_YIELD                                                                          \
-    }                                                                                           \
-    if (sqF.y() = 5 && player == Player::Second && sqF.move_down() && square(sqF) == Piece::None)\
-    {                                                                                           \
-        PLAY_AND_YIELD                                                                          \
-    }                                                                                           \
-}
-
             //DCHECK(Player::First)
             Square sq;
             do
             {
                 Piece piece = square(sq);
                 Player player = this->turn();
-                Player other_player = oponent(player);
-                if (!belongs_to(piece, this->turn()))
+                if (!belongs_to(piece, player))
                     continue;
+                piece = Piece(std::abs(piece));
+                Player other_player = oponent(player);
                 Square sq2;
                 if (piece == Piece::Queen || piece == Piece::Rook)
                 {

@@ -23,7 +23,6 @@ TEST(chess, FED) {
 
 TEST(chess, init_position) {
 	chess::ChessPosition<true> pos;
-	chess::ChessPosition<true> pos_init;
 
 	for (chess::Square square : chess::Square::all_squares())
 	{
@@ -37,18 +36,30 @@ TEST(chess, init_position) {
 	std::string all_moves;
 	for (chess::Move move : pos.all_legal_moves())
 	{
-		EXPECT_EQ(pos, pos_init)
-			<< "After " << move.chess_notation() << std::endl << pos;
-
 		EXPECT_NE(chess::Piece::None, pos[move.from()])
 			<< "move: " << move.chess_notation();
 		EXPECT_EQ(chess::Piece::None, pos[move.to()])
 			<< "move: " << move.chess_notation();
 
 		all_moves += move.chess_notation() + " ";
+
+		pos += move;
+		int count2 = 0;
+		for (chess::Move move2 : pos.all_legal_moves())
+		{
+			pos += move2;
+			count2++;
+			pos -= move2;
+		}
+		pos -= move;
+		EXPECT_EQ(count2, 20);
 		count++;
 	}
-	EXPECT_EQ(count, 20)	// fails with 13
+
+	chess::ChessPosition<true> pos_init;
+	EXPECT_EQ(pos, pos_init);
+
+	EXPECT_EQ(count, 20)
 		<< all_moves << std::endl;
 }
 
