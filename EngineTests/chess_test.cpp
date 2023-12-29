@@ -23,6 +23,8 @@ TEST(chess, FED) {
 
 TEST(chess, init_position) {
 	chess::ChessPosition<true> pos;
+	EXPECT_FALSE(pos.is_checked(Player::First));
+	EXPECT_FALSE(pos.is_checked(Player::Second));
 
 	for (chess::Square square : chess::Square::all_squares())
 	{
@@ -44,10 +46,14 @@ TEST(chess, init_position) {
 		all_moves += move.chess_notation() + " ";
 
 		pos += move;
+		EXPECT_FALSE(pos.is_checked(Player::First));
+		EXPECT_FALSE(pos.is_checked(Player::Second));
 		int count2 = 0;
 		for (chess::Move move2 : pos.all_legal_moves())
 		{
 			pos += move2;
+			EXPECT_FALSE(pos.is_checked(Player::First));
+			EXPECT_FALSE(pos.is_checked(Player::Second));
 			count2++;
 			pos -= move2;
 		}

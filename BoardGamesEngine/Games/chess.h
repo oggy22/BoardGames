@@ -551,21 +551,26 @@ if (sq2.MOVE() && !belongs_to(square(sq2), player) && CONDITION)      \
 
         bool is_checked(Player player) const
         {
+            return is_controlled_by(player == Player::First ? King1 : King2, oponent(player));
+        }
+        
+        bool is_controlled_by(Square start, Player player) const
+        {
 #define CHECK_DIRECTION(START, MOVE, PIECES)    \
 sq = START;                                     \
 while (sq.MOVE())                               \
 {                                               \
     Piece piece = square(sq);                   \
-    if (belongs_to(piece, player))              \
+    if (piece != Piece::None) {                 \
+        if (!belongs_to(piece, player))         \
+            break;                              \
+        piece = abs(piece);                     \
+        if (PIECES)                             \
+            return true;                        \
         break;                                  \
-    piece = abs(piece);                         \
-    if (PIECES)                                 \
-        return true;                            \
-    if (piece != Piece::None)                   \
-        break;                                  \
+    }                                           \
 };
-            Square start, sq;
-            start = player == Player::First ? King1 : King2;
+            Square sq;
             bool other_piece = false;
 
             // Check horizontal and vertical directions for queen and rook
@@ -583,7 +588,7 @@ while (sq.MOVE())                               \
 
 #define CHECK_SINGLE(START, MOVE, PIECE)                                        \
 sq = START;                                                                     \
-if (sq.MOVE() && abs(square(sq)) == PIECE && !belongs_to(square(sq), player))   \
+if (sq.MOVE() && abs(square(sq)) == PIECE && belongs_to(square(sq), player))    \
     return true;
             // Check knights
             CHECK_SINGLE(start, move_knight1, Piece::Knight);
@@ -598,14 +603,13 @@ if (sq.MOVE() && abs(square(sq)) == PIECE && !belongs_to(square(sq), player))   
             // Check pawns
             if (player == Player::First)
             {
-                CHECK_SINGLE(start, move_upright, Piece::Pawn);
-                CHECK_SINGLE(start, move_upleft, Piece::Pawn);
+                CHECK_SINGLE(start, move_downright, Piece::Pawn);
+                CHECK_SINGLE(start, move_downleft, Piece::Pawn);
             }
             else
             {
-                //DHECK(player == Player::Second)
-                CHECK_SINGLE(start, move_downright, Piece::Pawn);
-                CHECK_SINGLE(start, move_downleft, Piece::Pawn);
+                CHECK_SINGLE(start, move_upright, Piece::Pawn);
+                CHECK_SINGLE(start, move_upleft, Piece::Pawn);
             }
 
             return false;
