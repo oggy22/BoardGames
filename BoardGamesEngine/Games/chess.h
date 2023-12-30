@@ -85,7 +85,7 @@ namespace chess {
     class Square : public SquareBase<8, 8>
     {
     public:
-        Square() : SquareBase(0) { }
+        Square() : SquareBase() { } // invalid square
         Square(int n) : SquareBase(n) { }
         Square(int x, int y) : SquareBase(y * 8 + x) {}
         Square(char letter, char number) : SquareBase(int(letter -'A'), int(number - '1')) { }
@@ -168,13 +168,20 @@ namespace chess {
     class Move
     {
     public:
-        bool is_valid() { return int(_from) != -1; }
-        Move() : _from(-1) { }
+        bool is_valid() { return _from.is_valid(); }
+        Move() : _from() { }    // invalid move
         Move(Square from, Square to, Piece captured = Piece::None, Piece promotion = Piece::None) :
             _from(from),
             _to(to),
             _captured(captured),
-            _promotion(promotion) {}
+            _promotion(promotion)
+        {
+            DCHECK(captured != Piece::King);
+            DCHECK(captured != Piece::OtherKing);
+            DCHECK(from.is_valid());
+            DCHECK(to.is_valid());
+            DCHECK(from != to);
+        }
         void flip_rows();
         void flip_columns();
         void flip_rows_and_columns();
@@ -364,27 +371,28 @@ namespace chess {
         bool is_legal(Move move) { return square(move.to()) == move.captured(); }
         bool is_reverse_legal(Move move) { return square(move.from()) == Piece::None && square(move.to()) != Piece::None; }
         bool is_legal() { throw ""; }
-        Piece square(Square sq) const { return table[sq]; }
-        Piece& square(Square sq) { return table[sq]; }
 
         Piece operator[](Square square) const { return table[square]; }
         void operator+=(Move move)
         {
             DCHECK(square(move.to()) == move.captured());
-            square(move.to()) = square(move.from());
+            square(move.to()) = move.promotion() == Piece::None ? square(move.from()) : move.promotion();
             square(move.from()) = Piece::None;
-            if (move.to() == King1) King1 = move.to();
-            if (move.to() == King2) King2 = move.to();
+            if (move.from() == King1) King1 = move.to();
+            if (move.from() == King2) King2 = move.to();
             BoardBase::move();
         }
 
         void operator-=(Move move)
         {
             DCHECK(square(move.from()) == 0);
-            square(move.from()) = square(move.to());
+            square(move.from()) =
+                move.promotion() == Piece::None
+                ? square(move.to())
+                : (move.promotion() > 0 ? Piece::Pawn : Piece::OtherPawn);
             square(move.to()) = move.captured();
-            if (move.from() == King1) King1 = move.from();
-            if (move.from() == King2) King2 = move.from();
+            if (move.to() == King1) King1 = move.from();
+            if (move.to() == King2) King2 = move.from();
             BoardBase::reverse_move();
         }
         std::experimental::generator<Move> all_legal_moves_played()
@@ -419,7 +427,7 @@ if (sq2.MOVE() && !belongs_to(square(sq2), player) && CONDITION)      \
 #define MOVE_PAWN(MOVE) MOVE_ONCE_WITH_COND(MOVE, true)
 
             //DCHECK(Player::First)
-            Square sq;
+            Square sq(0);
             do
             {
                 Piece piece = square(sq);
@@ -470,24 +478,31 @@ if (sq2.MOVE() && !belongs_to(square(sq2), player) && CONDITION)      \
                 if (piece == Piece::Pawn)
                 {
                     Square sqF = sq, sqFF = sq;
+                    Piece queen;
                     if (this->turn() == Player::First)
+                    {
                         sqF.move_up();
+                        queen = Piece::Queen;
+                    }
                     else
+                    {
                         sqF.move_down();
+                        queen = Piece::OtherQueen;
+                    }
                     if (square(sqF) == Piece::None)
                     {
-                        Move move(sq, sqF, Piece::None, sqF.y() == 0 || sqF.y() == 7 ? Piece::Queen : Piece::None); // todo: promotion white and black
+                        Move move(sq, sqF, Piece::None, sqF.y() == 0 || sqF.y() == 7 ? queen : Piece::None);
                         PLAY_AND_YIELD
                     }
                     Square sqL = sqF, sqR = sqF;
                     if (sqL.move_left() && belongs_to(square(sqL), oponent(player)))
                     {
-                        Move move(sq, sqL, Piece::None, sqL.y() == 0 || sqL.y() == 7 ? Piece::Queen : Piece::None); // todo: promotion white and black
+                        Move move(sq, sqL, square(sqL), sqL.y() == 0 || sqL.y() == 7 ? queen : Piece::None);
                         PLAY_AND_YIELD
                     }
                     if (sqR.move_right() && belongs_to(square(sqR), oponent(player)))
                     {
-                        Move move(sq, sqL, Piece::None, sqL.y() == 0 || sqL.y() == 7 ? Piece::Queen : Piece::None); // todo: promotion white and black
+                        Move move(sq, sqR, square(sqR), sqR.y() == 0 || sqR.y() == 7 ? queen : Piece::None);
                         PLAY_AND_YIELD
                     }
                     if (square(sqF) == Piece::None)
@@ -629,7 +644,18 @@ if (sq.MOVE() && abs(square(sq)) == PIECE && belongs_to(square(sq), player))    
 
         void flip_rows()
         {
-            Square bottom(0, 0), top;
+            Square bottom(0, 0);
+            do
+            {
+                Square top(bottom.x(), 7 - bottom.y());
+                do
+                {
+                    std::swap(square(bottom), square(top));
+                    top.move_right();
+                } while (bottom.move_right());
+            } while (bottom.y() < 4);
+            King1 = Square(King1.x(), 7 - King1.y());
+            King2 = Square(King2.x(), 7 - King2.y());
         }
 
         void flip_columns();
@@ -701,7 +727,6 @@ if (sq.MOVE() && abs(square(sq)) == PIECE && belongs_to(square(sq), player))    
             return os;
         }
     private:
-        Piece table[64];
         Square King1, King2;
     };
 

@@ -7,22 +7,22 @@ TEST(Core, oponent) {
 }
 
 TEST(Core, SquareBase1_1) {
-	SquareBase<1, 1> sb1; EXPECT_FALSE(sb1.move_down());
-	SquareBase<1, 1> sb2; EXPECT_FALSE(sb2.move_up());
-	SquareBase<1, 1> sb3; EXPECT_FALSE(sb3.move_left());
-	SquareBase<1, 1> sb4; EXPECT_FALSE(sb4.move_right());
+	SquareBase<1, 1> sb1(0); EXPECT_FALSE(sb1.move_down());
+	SquareBase<1, 1> sb2(0); EXPECT_FALSE(sb2.move_up());
+	SquareBase<1, 1> sb3(0); EXPECT_FALSE(sb3.move_left());
+	SquareBase<1, 1> sb4(0); EXPECT_FALSE(sb4.move_right());
 
-	SquareBase<1, 1> sb5; EXPECT_FALSE(sb1.move_upleft());
-	SquareBase<1, 1> sb6; EXPECT_FALSE(sb1.move_upright());
-	SquareBase<1, 1> sb7; EXPECT_FALSE(sb1.move_downleft());
-	SquareBase<1, 1> sb8; EXPECT_FALSE(sb1.move_downright());
+	SquareBase<1, 1> sb5(0); EXPECT_FALSE(sb1.move_upleft());
+	SquareBase<1, 1> sb6(0); EXPECT_FALSE(sb1.move_upright());
+	SquareBase<1, 1> sb7(0); EXPECT_FALSE(sb1.move_downleft());
+	SquareBase<1, 1> sb8(0); EXPECT_FALSE(sb1.move_downright());
 
-	SquareBase<1, 1> inc; EXPECT_FALSE(++inc);
-	SquareBase<1, 1> dec; EXPECT_FALSE(--dec);
+	SquareBase<1, 1> inc(0); EXPECT_FALSE(++inc);
+	SquareBase<1, 1> dec(0); EXPECT_FALSE(--dec);
 }
 
 TEST(Core, SquareBase8_8) {
-	SquareBase<8, 8> inc;
+	SquareBase<8, 8> inc(0);
 	for (int i = 0; i < 63; i++)
 		EXPECT_TRUE(++inc);
 	EXPECT_FALSE(++inc);

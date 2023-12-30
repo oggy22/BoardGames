@@ -156,3 +156,47 @@ TEST(chess, square_knight_moves)
 		EXPECT_TRUE(squares_visited[i])
 			<< chess::Square(i).chess_notation();
 }
+
+TEST(chess, random_game) {
+	for (int seed = 0; seed < 100; seed++)
+	{
+		chess::ChessPosition<true> pos;
+		for (int i = 0; i < 1500; i++)
+		{
+			Player player = pos.turn();
+			EXPECT_FALSE(pos.is_checked(oponent(player)));
+
+			// Get a random move and check that the board isn't affected
+			chess::ChessPosition<true> pos_backup = pos;
+			chess::Move move = random_move<chess::ChessPosition<true>, chess::Move>(pos, seed);
+			EXPECT_EQ(pos, pos_backup);
+
+			if (!move.is_valid())
+				break;
+			
+			EXPECT_TRUE(pos.is_legal(move));
+
+			pos += move;
+
+			// No pawns on the 1st and 8th rows
+			chess::Square first("A1"), last("A8");
+			do
+			{
+				chess::Piece f = abs(pos[first]), l = abs(pos[last]);
+				EXPECT_NE(chess::Piece::Pawn, f);
+				EXPECT_NE(chess::Piece::Pawn, l);
+			} while (first.move_right() && last.move_right());
+
+			// Only 2 kings and no check to the player played
+			EXPECT_EQ(1, pos.count_piece(chess::Piece::King))
+				<< i << " " << move.chess_notation() << std::endl
+				<< pos.fen() << std::endl;
+			EXPECT_EQ(1, pos.count_piece(chess::Piece::OtherKing))
+				<< i << " " << move.chess_notation() << std::endl
+				<< pos.fen() << std::endl;
+			EXPECT_FALSE(pos.is_checked(player))
+				<< i << " " << move.chess_notation() << std::endl
+				<< pos.fen() << std::endl;
+		}
+	}
+}

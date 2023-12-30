@@ -41,7 +41,7 @@ template<int W, int H>
 class SquareBase
 {
 public:
-    SquareBase() : _square(0) {}
+    SquareBase() : _square(W*H) {}  // invalid square
     SquareBase(int n) : _square(n)
     {
         DCHECK(n >= 0 && n < W * H);
@@ -145,7 +145,7 @@ protected:
     void reverse_move()
     {
         _turn = oponent(_turn);
-        ply++;
+        ply--;
         DCHECK(ply >= 0);
     }
 
@@ -162,16 +162,20 @@ public:
         return table[int(sq)];
     }
 
-    std::experimental::generator<piece_t> get_pieces()
+    piece_t square(SquareBase<W, H> sq) const { return table[sq]; }
+    
+    piece_t& square(SquareBase<W, H> sq) { return table[sq]; }
+
+    std::experimental::generator<piece_t> get_pieces() const
     {
-        SquareBase<W,H> sq;
+        SquareBase<W, H> sq(0);
         do
         {
             co_yield (*this)[sq];
         } while (++sq);
     }
 
-    std::experimental::generator<piece_t> get_pieces_reversed()
+    std::experimental::generator<piece_t> get_pieces_reversed() const
     {
         SquareBase<W, H> sq(W * H - 1);
         do
@@ -180,7 +184,7 @@ public:
         } while (--sq);
     }
 
-    std::experimental::generator<SquareBase<W, H>> get_squares()
+    std::experimental::generator<SquareBase<W, H>> get_squares() const
     {
         SquareBase<W, H> sq;
         do
@@ -189,13 +193,24 @@ public:
         } while (++sq);
     }
 
-    std::experimental::generator<SquareBase<W, H>> get_squares_reversed()
+    std::experimental::generator<SquareBase<W, H>> get_squares_reversed() const
     {
         SquareBase<W, H> sq(W * H - 1);
         do
         {
             co_yield sq;
         } while (--sq);
+    }
+
+    int count_piece(piece_t piece) const
+    {
+        int ret = 0;
+        for (auto p : get_pieces())
+        {
+            if (p == piece)
+                ret++;
+        }
+        return ret;
     }
 };
 
@@ -252,7 +267,7 @@ private:
 };
 
 template <typename Board, typename Move>
-Move random_move(Board board)
+Move random_move(Board& board, int seed = 0)
 {
     std::vector<Move> moves;
     for (Move move : board.all_legal_moves())
@@ -260,8 +275,11 @@ Move random_move(Board board)
         moves.push_back(move);
     }
 
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_int_distribution dist(0, moves.size() - 1);
+    if (moves.size() == 0)
+        return Move();
+
+    //std::random_device rd;
+    std::mt19937 gen(seed);
+    std::uniform_int_distribution<> dist(0, moves.size() - 1);
     return moves[dist(gen)];
 }
