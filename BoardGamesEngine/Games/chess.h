@@ -86,6 +86,7 @@ namespace chess {
     {
     public:
         Square() : SquareBase() { } // invalid square
+        Square(SquareBase sq) : SquareBase(sq) { }
         Square(int n) : SquareBase(n) { }
         Square(int x, int y) : SquareBase(y * 8 + x) {}
         Square(char letter, char number) : SquareBase(int(letter -'A'), int(number - '1')) { }
@@ -129,6 +130,20 @@ namespace chess {
         bool move_knight7() { return move_downright() && move_down(); }
         bool move_knight8() { return move_downright() && move_right(); }
 
+        std::experimental::generator<Square> knight_moves()
+        {
+            Square sq;
+            sq = (*this); if (sq.move_knight1()) co_yield sq;
+            sq = (*this); if (sq.move_knight2()) co_yield sq;
+            sq = (*this); if (sq.move_knight3()) co_yield sq;
+            sq = (*this); if (sq.move_knight4()) co_yield sq;
+
+            sq = (*this); if (sq.move_knight5()) co_yield sq;
+            sq = (*this); if (sq.move_knight6()) co_yield sq;
+            sq = (*this); if (sq.move_knight7()) co_yield sq;
+            sq = (*this); if (sq.move_knight8()) co_yield sq;
+        }
+
         operator int() { return int(_square); }
 
         int king_distance(Square sq)
@@ -153,9 +168,9 @@ namespace chess {
             _square += inc;
         }
 
-        std::string chess_notation() const
+        std::string chess_notation(bool lowercase = false) const
         {
-            return SquareBase<8,8>::chess_notation();
+            return SquareBase<8,8>::chess_notation(lowercase);
         }
 
     private:
@@ -211,6 +226,7 @@ namespace chess {
     class ChessPosition : public BoardBase<8, 8, Piece>
     {
         friend struct ConverterSimple;
+        bool _track_png = false;
     public:
 
         ChessPosition(bool only_kings = false)
@@ -255,6 +271,7 @@ namespace chess {
             }
         }
 
+#pragma region FEN
         ChessPosition(std::string FEN)
         {
             Square sq(0);
@@ -313,6 +330,7 @@ namespace chess {
             
             return fen.substr(0, fen.length()-1);
         }
+#pragma endregion
 
         int Evaluate() const { return 0; }
 
@@ -333,6 +351,8 @@ namespace chess {
         {
             if (King1 != other.King1 || King2 != other.King2)
                 return false;
+            if (ply != other.ply)
+                return false;
             for (int i = 0; i < 64; i++)
             {
                 if (table[i] != other.table[i])
@@ -341,6 +361,175 @@ namespace chess {
             return true;
         }
 
+#pragma region PNG
+#define VERIFY_DIRECTION(DIR)                   \
+for (sq1.DIR(); sq1 < sq2; sq1.DIR())           \
+{                                               \
+    if (square(sq1) != Piece::None)             \
+        return false;                           \
+}                                               \
+return true;                                    \
+
+        bool rook_move(Square sq1, Square sq2)
+        {
+            DCHECK(sq1 != sq2);
+            if (sq1 > sq2) std::swap(sq1, sq2);
+            if (sq1.x() == sq2.x())
+            {
+                VERIFY_DIRECTION(move_up);
+            }
+            if (sq1.y() == sq2.y())
+            {
+                VERIFY_DIRECTION(move_right);
+            }
+            return false;
+        }
+
+        bool bishop_move(Square sq1, Square sq2)
+        {
+            DCHECK(sq1 != sq2);
+            if (sq1 > sq2) std::swap(sq1, sq2);
+            int dy = sq1.y() - sq2.y();
+            DCHECK(dy > 0);
+            if (dy == sq2.x() - sq1.x())
+            {
+                VERIFY_DIRECTION(move_upright);
+            }
+            if (dy == sq1.x() - sq2.x())
+            {
+                VERIFY_DIRECTION(move_upright);
+            }
+            return false;
+        }
+
+        bool queen_move(Square sq1, Square sq2)
+        {
+            return rook_move(sq1, sq2) || bishop_move(sq1, sq2);
+        }
+
+        void track_png() { _track_png = true;  }
+
+        std::string png()
+        {
+            std::string ret = "";
+            for (int i = 0; i < ply; i++)
+            {
+                if (i % 2 == 0)
+                {
+                    int turn = i / 2 + 1;
+                    ret += std::to_string(turn);
+                    ret += ". ";
+                }
+                ret += pngs[i] + " ";
+            }
+            return ret;
+        }
+
+        std::vector<std::string> pngs;
+
+        std::string move_to_png(Move move)
+        {
+            Piece piece = square(move.from());
+            switch (std::abs(piece))
+            {
+            //King = 1, Queen = 2, Rook = 3, Bishop = 4, Knight = 5, Pawn = 6,
+            case Piece::King: return "K" + move.to().chess_notation(true);
+            case Piece::Queen:
+            {
+                bool x_diff = true, y_diff = true;
+                bool another = false;
+                for (Square sq : get_squares(piece))
+                {
+                    if (move.from() != sq && queen_move(sq, move.to()))
+                    {
+                        another = true;
+                        if (sq.x() == move.from().x())
+                            x_diff = false;
+                        if (sq.y() == move.from().y())
+                            y_diff = false;
+                    }
+                }
+                std::string extra = "";
+                if (another)
+                {
+                    if (x_diff) extra = 'a' + move.from().x();
+                    else if (y_diff) extra = '1' + move.from().y();
+                    else extra = move.from().chess_notation(true);
+                }
+                return "Q" + move.to().chess_notation(true);
+            }
+            case Piece::Rook:
+            {
+                bool x_diff = true, y_diff = true;
+                bool another = false;
+                for (Square sq : get_squares(piece))
+                {
+                    if (move.from() != sq && rook_move(sq, move.to()))
+                    {
+                        another = true;
+                        if (sq.x() == move.from().x())
+                            x_diff = false;
+                        if (sq.y() == move.from().y())
+                            y_diff = false;
+                    }
+                }
+                std::string extra = "";
+                if (another)
+                {
+                    if (x_diff) extra = 'a' + move.from().x();
+                    else if (y_diff) extra = '1' + move.from().y();
+                    else extra = move.from().chess_notation(true);
+                }
+                return "R" + extra + move.to().chess_notation(true);
+            }
+            case Piece::Bishop: return "B" + move.to().chess_notation(true);
+            case Piece::Knight:
+            {
+                bool x_diff = true, y_diff = true;
+                bool another = false;
+                for (Square sq : move.to().knight_moves())
+                {
+                    if (sq == move.from() || square(sq) != piece)
+                        continue;
+
+                    another = true;
+                    if (sq.x() == move.from().x())
+                        x_diff = false;
+                    if (sq.y() == move.from().y())
+                        y_diff = false;
+                }
+                std::string extra = "";
+                if (another)
+                {
+                    if (x_diff) extra = 'a' + move.from().x();
+                    else if (y_diff) extra = '1' + move.from().y();
+                    else extra = move.from().chess_notation(true);
+                }
+                return "N" + extra + move.to().chess_notation(true);
+            }
+            case Piece::Pawn:
+            {
+                std::string pre, post;
+                if (move.captured() != Piece::None)
+                {
+                    pre = move.from().chess_notation(true);
+                    pre[1] = 'x';
+                }
+                if (move.promotion() != Piece::None)
+                {
+                    post = std::string("=") + Piece_to_char(abs(move.promotion()));
+                }
+                return pre + move.to().chess_notation(true) + post;
+            }
+            default:
+            {
+                DCHECK_FAIL;
+                return "";
+            }
+            };
+        }
+#pragma endregion
+        
         void invert()
         {
             for (int column = 0; column < 8; column++)
@@ -373,8 +562,17 @@ namespace chess {
         bool is_legal() { throw ""; }
 
         Piece operator[](Square square) const { return table[square]; }
+
         void operator+=(Move move)
         {
+            if (_track_png)
+            {
+                if (ply == pngs.size())
+                    pngs.push_back(move_to_png(move));
+                else
+                    pngs[ply] = move_to_png(move);
+            }
+
             DCHECK(square(move.to()) == move.captured());
             square(move.to()) = move.promotion() == Piece::None ? square(move.from()) : move.promotion();
             square(move.from()) = Piece::None;
@@ -395,6 +593,7 @@ namespace chess {
             if (move.to() == King2) King2 = move.from();
             BoardBase::reverse_move();
         }
+
         std::experimental::generator<Move> all_legal_moves_played()
         {
 #define PLAY_AND_YIELD  \
@@ -425,6 +624,10 @@ if (sq2.MOVE() && !belongs_to(square(sq2), player) && CONDITION)      \
 
 #define MOVE_ONCE(MOVE) MOVE_ONCE_WITH_COND(MOVE, true)
 #define MOVE_PAWN(MOVE) MOVE_ONCE_WITH_COND(MOVE, true)
+
+            // Store png flag
+            bool stored_png = _track_png;
+            _track_png = false;
 
             //DCHECK(Player::First)
             Square sq(0);
@@ -520,6 +723,9 @@ if (sq2.MOVE() && !belongs_to(square(sq2), player) && CONDITION)      \
                     }
                 }
             } while (++sq);
+
+            // Restore png flag
+            _track_png = stored_png;
         }
 
         bool exists_move(bool (*func)(const ChessPosition&))
@@ -663,7 +869,7 @@ if (sq.MOVE() && abs(square(sq)) == PIECE && belongs_to(square(sq), player))    
         void flip_board();
         std::string generate_endtable_type();
 
-        std::experimental::generator<std::pair<char, Square>> get_pieces() const
+        std::experimental::generator<std::pair<char, Square>> get_piece_squares() const
         {
             Square square;
             co_yield std::pair<char, Square>('K', King1);

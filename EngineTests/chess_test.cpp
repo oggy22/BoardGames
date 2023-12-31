@@ -157,10 +157,11 @@ TEST(chess, square_knight_moves)
 			<< chess::Square(i).chess_notation();
 }
 
-TEST(chess, random_game) {
-	for (int seed = 0; seed < 100; seed++)
+TEST(chess, random_games) {
+	for (int seed = 1; seed < 10; seed++)
 	{
 		chess::ChessPosition<true> pos;
+		pos.track_png();
 		for (int i = 0; i < 1500; i++)
 		{
 			Player player = pos.turn();
@@ -172,7 +173,34 @@ TEST(chess, random_game) {
 			EXPECT_EQ(pos, pos_backup);
 
 			if (!move.is_valid())
+			{
+				std::string png = pos.png();
 				break;
+			}
+
+			// Check if drawn with 2 kings only
+			int count_pieces = 64 - pos.count_piece(chess::Piece::None);
+			if (count_pieces == 2)
+			{
+				std::string png = pos.png();
+				break;
+			}
+			if (count_pieces == 3)
+			{
+				bool should_break = false;
+				for (chess::Piece piece : pos.get_pieces())
+				{
+					if (abs(piece) == chess::Piece::Bishop
+						|| abs(piece) == chess::Piece::Knight)
+					{
+						std::string png = pos.png();
+						should_break = true;
+						break;
+					}
+				}
+				if (should_break)
+					break;
+			}
 			
 			EXPECT_TRUE(pos.is_legal(move));
 

@@ -109,11 +109,11 @@ public:
     /// Chess like notation works for bigger boards than 8x8
     /// </summary>
     /// <returns>For example "A1" for the first square</returns>
-    std::string chess_notation() const
+    std::string chess_notation(bool lowercase = false) const
     {
         static_assert(W <= 26 && H < 10);
         std::string ret("  ");
-        ret[0] = 'A' + x();
+        ret[0] = (lowercase ? 'a' : 'A') + x();
         ret[1] = '1' + y();
         return ret;
     }
@@ -127,8 +127,8 @@ template<int W, int H, typename piece_t>
 class BoardBase
 {
     Player _turn;
-    int ply;
 protected:
+    int ply;
     piece_t table[W * H];
 
     piece_t& operator[](SquareBase<W, H> sq)
@@ -202,6 +202,15 @@ public:
         } while (--sq);
     }
 
+    std::experimental::generator<SquareBase<W, H>> get_squares(piece_t piece) const
+    {
+        SquareBase<W, H> sq(0);
+        do
+        {
+            if (piece == (*this)[sq])
+                co_yield sq;
+        } while (++sq);
+    }
     int count_piece(piece_t piece) const
     {
         int ret = 0;
@@ -279,7 +288,8 @@ Move random_move(Board& board, int seed = 0)
         return Move();
 
     //std::random_device rd;
-    std::mt19937 gen(seed);
+    static std::mt19937 gen(seed);
     std::uniform_int_distribution<> dist(0, moves.size() - 1);
-    return moves[dist(gen)];
+    int index = dist(gen);
+    return moves[index];
 }
