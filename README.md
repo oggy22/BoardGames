@@ -1,2 +1,2 @@
 # BoardGames
-A simple engine and end-tables for board games like chess, checkers and general tic-tac-toe (m,n,k-game) including connect 4. Heavy use of new C++ features like generator and concepts. Easy to add new engine and new game.
+An extensible framework for programming search algorithms (minimax with cutting, killer moves, etc) and end-tables for board games such as two-player, full info board games such as chess, MNK, Connect4, checkers etc. Heavy use of newer C++ features such as `constexpr`, `if constexpr`, `concepts`, `std::experimental::generator` and heavy use of C macros around chess moves.
