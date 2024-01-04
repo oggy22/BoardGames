@@ -81,6 +81,42 @@ TEST(chess, invert) {
 	pos_copy.invert();
 	//EXPECT_EQ(pos, pos_copy);
 }
+TEST(chess, castle) {
+	chess::ChessPosition<true> pos(std::string("4k3/8/8/8/8/8/8/R3K2R"));
+	chess::ChessPosition<true> copy(pos);
+
+	bool left_castle = false, right_castle = false;
+	for (chess::Move move : pos.all_legal_moves())
+	{
+		EXPECT_EQ(pos, copy)
+			<< "Last move: " << move.chess_notation() << std::endl;
+		if (move == chess::Move("E1", "G1"))
+			right_castle = true;
+		if (move == chess::Move("E1", "C1"))
+			left_castle = true;
+	}
+	EXPECT_TRUE(right_castle);
+	EXPECT_TRUE(left_castle);
+}
+
+
+TEST(chess, castle_none) {
+	chess::ChessPosition<true> pos(std::string("4k3/8/8/8/8/8/1q4q1/R3K2R"));
+	chess::ChessPosition<true> copy(pos);
+
+	bool left_castle = false, right_castle = false;
+	for (chess::Move move : pos.all_legal_moves())
+	{
+		EXPECT_EQ(pos, copy)
+			<< "Last move: " << move.chess_notation() << std::endl;
+		if (move == chess::Move("E1", "G1"))
+			right_castle = true;
+		if (move == chess::Move("E1", "C1"))
+			left_castle = true;
+	}
+	EXPECT_FALSE(right_castle);
+	EXPECT_FALSE(left_castle);
+}
 
 static bool squares_visited[64];
 int count_knight_moves(chess::Square sq)
@@ -158,7 +194,7 @@ TEST(chess, square_knight_moves)
 }
 
 TEST(chess, random_games) {
-	for (int seed = 1; seed < 10; seed++)
+	for (int seed = 1; seed < DebugRelease(20, 500); seed++)
 	{
 		chess::ChessPosition<true> pos;
 		pos.track_png();
@@ -170,7 +206,14 @@ TEST(chess, random_games) {
 			// Get a random move and check that the board isn't affected
 			chess::ChessPosition<true> pos_backup = pos;
 			chess::Move move = random_move<chess::ChessPosition<true>, chess::Move>(pos, seed);
-			EXPECT_EQ(pos, pos_backup);
+			EXPECT_EQ(pos, pos_backup)
+				<< pos.fen() << std::endl
+				<< pos_backup.fen() << std::endl;
+			if (pos != pos_backup)
+			{
+				std::string png = pos.png();
+				FAIL();
+			}
 
 			if (!move.is_valid())
 			{

@@ -19,7 +19,7 @@ inline void failure()
         failure();                  \
 }
 
-#define DCHECK_FAIL throw(AT)
+#define DCHECK_FAIL DCHECK(false); throw "fail";
 
 #define SIZE long long
 
@@ -41,12 +41,12 @@ template<int W, int H>
 class SquareBase
 {
 public:
-    SquareBase() : _square(W*H) {}  // invalid square
+    constexpr SquareBase() : _square(W*H) {}  // invalid square
     SquareBase(int n) : _square(n)
     {
         DCHECK(n >= 0 && n < W * H);
     }
-    SquareBase(int x, int y) : _square(x + y * W)
+    constexpr SquareBase(int x, int y) : _square(x + y * W)
     {
         DCHECK(0 <= x && x < W);
         DCHECK(0 <= y && y < H);
@@ -120,6 +120,13 @@ public:
 
 protected:
     static_assert(W * H < (1 << 16));
+
+    /// <summary>
+    /// General:
+    /// A1=0, B1=1, C1=3, ..., H1=7
+    /// For chess:
+    /// A2=8, B2=9, ..., H2=15, ..., H8 = 63  
+    /// </summary>
     uint16_t _square;
 };
 

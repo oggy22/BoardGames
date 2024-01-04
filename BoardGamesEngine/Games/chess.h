@@ -172,13 +172,9 @@ namespace chess {
         {
             return SquareBase<8,8>::chess_notation(lowercase);
         }
-
-    private:
-        /// <summary>
-        /// A1=0, B1=1, C1=3, ..., H1=7, A2=8, B2=9, ..., H2=15, ..., H8 = 63  
-        /// </summary>
-        //uint8_t _square;
     };
+
+#define S(str) chess::Square(str)
 
     class Move
     {
@@ -197,6 +193,7 @@ namespace chess {
             DCHECK(to.is_valid());
             DCHECK(from != to);
         }
+        bool operator==(const Move&) const = default;
         void flip_rows();
         void flip_columns();
         void flip_rows_and_columns();
@@ -233,13 +230,13 @@ namespace chess {
         {
             for (int i = 0; i < 64; i++)
                 table[i] = Piece::None;
-            King1 = Square("E1");   table[King1] = Piece::King;
-            King2 = Square("E8");   table[King2] = Piece::OtherKing;
+            King1 = S("E1");   table[King1] = Piece::King;
+            King2 = S("E8");   table[King2] = Piece::OtherKing;
             if (only_kings)
                 return;
 
-            table[Square("D1")] = Piece::Queen;
-            table[Square("D8")] = Piece::OtherQueen;
+            table[S("D1")] = Piece::Queen;
+            table[S("D8")] = Piece::OtherQueen;
 
             // Pawns
             for (Square pw("A2"), pb("A7"); ;)
@@ -389,8 +386,8 @@ return true;                                    \
         {
             DCHECK(sq1 != sq2);
             if (sq1 > sq2) std::swap(sq1, sq2);
-            int dy = sq1.y() - sq2.y();
-            DCHECK(dy > 0);
+            int dy = sq2.y() - sq1.y();
+            DCHECK(dy >= 0);
             if (dy == sq2.x() - sq1.x())
             {
                 VERIFY_DIRECTION(move_upright);
@@ -563,6 +560,19 @@ return true;                                    \
 
         Piece operator[](Square square) const { return table[square]; }
 
+        bool castle_rook(Piece king_piece, chess::Square king, Piece rook_piece, chess::Square rook1, chess::Square rook2)
+        {
+            if (square(king) == king_piece)
+            {
+                DCHECK(square(rook1) == rook_piece);
+                DCHECK(square(rook2) == chess::Piece::None);
+                square(rook1) = chess::Piece::None;
+                square(rook2) = rook_piece;
+                return true;
+            }
+            return false;
+        }
+        
         void operator+=(Move move)
         {
             if (_track_png)
@@ -576,21 +586,53 @@ return true;                                    \
             DCHECK(square(move.to()) == move.captured());
             square(move.to()) = move.promotion() == Piece::None ? square(move.from()) : move.promotion();
             square(move.from()) = Piece::None;
-            if (move.from() == King1) King1 = move.to();
-            if (move.from() == King2) King2 = move.to();
+            if (move.from() == King1)
+            {
+                if (move.from() == S("E1"))
+                {
+                    castle_rook(chess::Piece::King, S("G1"), chess::Piece::Rook, S("H1"), S("F1"));
+                    castle_rook(chess::Piece::King, S("C1"), chess::Piece::Rook, S("A1"), S("D1"));
+                }
+                King1 = move.to();
+            }
+            if (move.from() == King2)
+            {
+                if (move.from() == S("E8"))
+                {
+                    castle_rook(chess::Piece::OtherKing, S("G8"), chess::Piece::OtherRook, S("H8"), S("F8"));
+                    castle_rook(chess::Piece::OtherKing, S("C8"), chess::Piece::OtherRook, S("A8"), S("D8"));
+                }
+                King2 = move.to();
+            }
             BoardBase::move();
         }
 
         void operator-=(Move move)
         {
             DCHECK(square(move.from()) == 0);
+            if (move.to() == King1)
+            {
+                if (move.from() == S("E1"))
+                {
+                    castle_rook(chess::Piece::King, S("G1"), chess::Piece::Rook, S("F1"), S("H1"));
+                    castle_rook(chess::Piece::King, S("C1"), chess::Piece::Rook, S("D1"), S("A1"));
+                }
+                King1 = move.from();
+            }
+            if (move.to() == King2)
+            {
+                if (move.from() == S("E8"))
+                {
+                    castle_rook(chess::Piece::OtherKing, S("G8"), chess::Piece::OtherRook, S("F8"), S("H8"));
+                    castle_rook(chess::Piece::OtherKing, S("C8"), chess::Piece::OtherRook, S("D8"), S("A8"));
+                }
+                King2 = move.from();
+            }
             square(move.from()) =
                 move.promotion() == Piece::None
                 ? square(move.to())
                 : (move.promotion() > 0 ? Piece::Pawn : Piece::OtherPawn);
             square(move.to()) = move.captured();
-            if (move.to() == King1) King1 = move.from();
-            if (move.to() == King2) King2 = move.from();
             BoardBase::reverse_move();
         }
 
@@ -629,16 +671,17 @@ if (sq2.MOVE() && !belongs_to(square(sq2), player) && CONDITION)      \
             bool stored_png = _track_png;
             _track_png = false;
 
+            Player player = this->turn();
+            Player other_player = oponent(player);
+
             //DCHECK(Player::First)
             Square sq(0);
             do
             {
                 Piece piece = square(sq);
-                Player player = this->turn();
                 if (!belongs_to(piece, player))
                     continue;
                 piece = Piece(std::abs(piece));
-                Player other_player = oponent(player);
                 Square sq2;
                 if (piece == Piece::Queen || piece == Piece::Rook)
                 {
@@ -724,8 +767,86 @@ if (sq2.MOVE() && !belongs_to(square(sq2), player) && CONDITION)      \
                 }
             } while (++sq);
 
+            int y = player == Player::First ? 0 : 7;
+            Square king(4, y);
+
+            if (abs(square(king)) == Piece::King && belongs_to(square(king), player))
+            {
+                Square right_rook(7, y);
+                if (right_castle(king, right_rook, player))
+                {
+                    std::swap(square(king), square(king + 2));
+                    std::swap(square(right_rook), square(right_rook - 2));
+                    (player == Player::First ? King1 : King2) = king + 2;
+                    BoardBase::move();
+                    co_yield Move(king, king + 2);
+                }
+                
+                Square left_rook(0, y);
+                if (left_castle(king, left_rook, player))
+                {
+                    std::swap(square(king), square(king - 2));
+                    std::swap(square(left_rook), square(left_rook + 3));
+                    (player == Player::First ? King1 : King2) = king - 2;
+                    BoardBase::move();
+                    co_yield Move(king, king - 2);
+                }
+            }
+
             // Restore png flag
             _track_png = stored_png;
+        }
+
+        bool right_castle(Square king, Square rook, Player player)
+        {
+            // Rook on place
+            if (abs(square(rook)) != Piece::Rook || !belongs_to(square(rook), player))
+                return false;
+
+            // Empty squares in between
+            Square sq = king;
+            for (sq.move_right(); sq != rook; sq.move_right())
+            {
+                if (square(sq) != Piece::None)
+                    return false;
+            }
+
+            // King.from(), middle, King.to() are not checked
+            Player other_player = oponent(player);
+            Square king_to = king + 2;
+            for (sq = king; sq <= king_to; sq.move_right())
+            {
+                if (is_controlled_by(sq, other_player))
+                    return false;
+            }
+
+            return true;
+        }
+        
+        bool left_castle(Square king, Square rook, Player player)
+        {
+            // Rook on place
+            if (abs(square(rook)) != Piece::Rook || !belongs_to(square(king), player))
+                return false;
+
+            // Empty squares in between
+            Square sq = king;
+            for (sq.move_left(); sq != rook; sq.move_left())
+            {
+                if (square(sq) != Piece::None)
+                    return false;
+            }
+
+            // King.from(), middle, King.to() are not checked
+            Player other_player = oponent(player);
+            Square king_to = king - 2;
+            for (sq = king; sq >= king_to; sq.move_left())
+            {
+                if (is_controlled_by(sq, other_player))
+                    return false;
+            }
+
+            return true;
         }
 
         bool exists_move(bool (*func)(const ChessPosition&))
