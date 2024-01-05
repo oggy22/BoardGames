@@ -282,14 +282,62 @@ private:
     int8_t data;
 };
 
+class stats
+{
+    int _min, _max;
+    int sum, n;
+public:
+    void reset()
+    {
+        _min = std::numeric_limits<int8_t>::max();
+        _max = std::numeric_limits<int8_t>::min();
+        sum = 0;
+        int n = 0;
+    }
+
+    stats()
+    {
+        reset();
+    }
+
+    float avg()
+    {
+		return float(sum) / n;
+	}
+
+    int min()
+    {
+		return _min;
+	}
+
+    int max()
+    {
+        return _max;
+    }
+
+    void add(int number)
+    {
+        sum += number;
+        n++;
+        if (number < _min)
+            _min = number;
+        if (number > _max)
+            _max = number;
+    }
+};
+
+static int s_number_of_moves;
+
 template <typename Board, typename Move>
-Move random_move(Board& board, int seed = 0)
+Move random_move(Board& board, int seed = 0, int& number_of_moves = s_number_of_moves)
 {
     std::vector<Move> moves;
     for (Move move : board.all_legal_moves())
     {
         moves.push_back(move);
     }
+
+    s_number_of_moves = moves.size();
 
     if (moves.size() == 0)
         return Move();
