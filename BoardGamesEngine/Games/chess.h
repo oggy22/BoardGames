@@ -453,7 +453,7 @@ return true;                                    \
                     else if (y_diff) extra = '1' + move.from().y();
                     else extra = move.from().chess_notation(true);
                 }
-                return "Q" + move.to().chess_notation(true);
+                return "Q" + extra + move.to().chess_notation(true);
             }
             case Piece::Rook:
             {
