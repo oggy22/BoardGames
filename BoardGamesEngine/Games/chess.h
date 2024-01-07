@@ -223,7 +223,7 @@ namespace chess {
     class ChessPosition : public BoardBase<8, 8, Piece>
     {
         friend struct ConverterSimple;
-        bool _track_png = false;
+        bool _track_pgn = false;
     public:
 
         ChessPosition(bool only_kings = false)
@@ -358,7 +358,7 @@ namespace chess {
             return true;
         }
 
-#pragma region PNG
+#pragma region PGN
 #define VERIFY_DIRECTION(DIR)                   \
 for (sq1.DIR(); sq1 < sq2; sq1.DIR())           \
 {                                               \
@@ -404,9 +404,9 @@ return true;                                    \
             return rook_move(sq1, sq2) || bishop_move(sq1, sq2);
         }
 
-        void track_png() { _track_png = true;  }
+        void track_pgn() { _track_pgn = true;  }
 
-        std::string png()
+        std::string pgn()
         {
             std::string ret = "";
             for (int i = 0; i < _ply; i++)
@@ -417,14 +417,14 @@ return true;                                    \
                     ret += std::to_string(turn);
                     ret += ". ";
                 }
-                ret += pngs[i] + " ";
+                ret += pgns[i] + " ";
             }
             return ret;
         }
 
-        std::vector<std::string> pngs;
+        std::vector<std::string> pgns;
 
-        std::string move_to_png(Move move)
+        std::string move_to_pgn(Move move)
         {
             Piece piece = square(move.from());
             switch (std::abs(piece))
@@ -575,12 +575,12 @@ return true;                                    \
         
         void operator+=(Move move)
         {
-            if (_track_png)
+            if (_track_pgn)
             {
-                if (_ply == pngs.size())
-                    pngs.push_back(move_to_png(move));
+                if (_ply == pgns.size())
+                    pgns.push_back(move_to_pgn(move));
                 else
-                    pngs[_ply] = move_to_png(move);
+                    pgns[_ply] = move_to_pgn(move);
             }
 
             DCHECK(square(move.to()) == move.captured());
@@ -667,9 +667,9 @@ if (sq2.MOVE() && !belongs_to(square(sq2), player) && CONDITION)      \
 #define MOVE_ONCE(MOVE) MOVE_ONCE_WITH_COND(MOVE, true)
 #define MOVE_PAWN(MOVE) MOVE_ONCE_WITH_COND(MOVE, true)
 
-            // Store png flag
-            bool stored_png = _track_png;
-            _track_png = false;
+            // Store pgn flag
+            bool stored_pgn = _track_pgn;
+            _track_pgn = false;
 
             Player player = this->turn();
             Player other_player = oponent(player);
@@ -793,8 +793,8 @@ if (sq2.MOVE() && !belongs_to(square(sq2), player) && CONDITION)      \
                 }
             }
 
-            // Restore png flag
-            _track_png = stored_png;
+            // Restore pgn flag
+            _track_pgn = stored_pgn;
         }
 
         bool right_castle(Square king, Square rook, Player player)

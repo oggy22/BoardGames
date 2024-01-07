@@ -198,7 +198,7 @@ TEST(chess, minmax_vs_random) {
 	for (int round = 1; round <= DebugRelease(20, 4); round++)
 	{
 		chess::ChessPosition<true> pos;
-		pos.track_png();
+		pos.track_pgn();
 		
 		for (int ply = 0; ply < DebugRelease(100, 50); ply++)
 		{
@@ -213,15 +213,15 @@ TEST(chess, minmax_vs_random) {
 
 			if (!move.is_valid())
 			{
-				EXPECT_TRUE(random) << "round:" << round << " game:" << pos.png() << std::endl;
-				EXPECT_TRUE(pos.is_checked(pos.turn())) << pos.png() << std::endl;
+				EXPECT_TRUE(random) << "round:" << round << " game:" << pos.pgn() << std::endl;
+				EXPECT_TRUE(pos.is_checked(pos.turn())) << pos.pgn() << std::endl;
 				break;
 			}
 
 			EXPECT_TRUE(pos.is_legal(move));
 			pos += move;
 		}
-		std::string pgn = pos.png();
+		std::string pgn = pos.pgn();
 	}
 }
 
@@ -230,7 +230,7 @@ TEST(chess, random_games) {
 	for (int seed = 1; seed < DebugRelease(20, 500); seed++)
 	{
 		chess::ChessPosition<true> pos;
-		pos.track_png();
+		pos.track_pgn();
 		for (int i = 0; i < 1500; i++)
 		{
 			Player player = pos.turn();
@@ -244,13 +244,13 @@ TEST(chess, random_games) {
 				<< pos_backup.fen() << std::endl;
 			if (pos != pos_backup)
 			{
-				std::string png = pos.png();
+				std::string pgn = pos.pgn();
 				FAIL();
 			}
 
 			if (!move.is_valid())
 			{
-				std::string png = pos.png();
+				std::string pgn = pos.pgn();
 				break;
 			}
 
@@ -258,7 +258,7 @@ TEST(chess, random_games) {
 			int count_pieces = 64 - pos.count_piece(chess::Piece::None);
 			if (count_pieces == 2)
 			{
-				std::string png = pos.png();
+				std::string pgn = pos.pgn();
 				break;
 			}
 			if (count_pieces == 3)
@@ -269,7 +269,7 @@ TEST(chess, random_games) {
 					if (abs(piece) == chess::Piece::Bishop
 						|| abs(piece) == chess::Piece::Knight)
 					{
-						std::string png = pos.png();
+						std::string pgn = pos.pgn();
 						should_break = true;
 						break;
 					}
