@@ -135,7 +135,7 @@ class BoardBase
 {
     Player _turn;
 protected:
-    int ply;
+    int _ply;
     piece_t table[W * H];
 
     piece_t& operator[](SquareBase<W, H> sq)
@@ -146,14 +146,14 @@ protected:
     void move()
     {
 		_turn = oponent(_turn);
-		ply++;
+		_ply++;
 	}
 
     void reverse_move()
     {
         _turn = oponent(_turn);
-        ply--;
-        DCHECK(ply >= 0);
+        _ply--;
+        DCHECK(_ply >= 0);
     }
 
     void invert()
@@ -162,7 +162,8 @@ protected:
     }
 public:
     Player turn() const { return _turn; }
-    BoardBase() : _turn(Player::First), ply(0) { }
+    int ply() const{ return _ply; }
+    BoardBase() : _turn(Player::First), _ply(0) { }
 
     piece_t operator[](SquareBase<W, H> sq) const
     {

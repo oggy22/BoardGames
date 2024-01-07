@@ -76,67 +76,35 @@ public:
 
 private:
 	template <Player player1>
-	static MoveVal Find(Pos& position, int curr_depth, int max_depth)
+	static MoveVal Find(Pos& position, int curr_depth, int max_depth, EvalValue cut = EvalValue::Win<player1>())
 	{
 		constexpr Player player2 = oponent(player1);
 		DCHECK(position.turn() == player1);
-		if (curr_depth = max_depth)
+		if (curr_depth == max_depth)
 			return { Move(), float(position.Evaluate()) };
 
-		bool any_moves1 = false;
-		MoveVal best1 { Move(), EvalValue::Lose<player1>() };
+		MoveVal best { Move(), EvalValue::Lose<player1>() };
 		for (auto move1 : position.all_legal_moves_played())
 		{
-			if (position.easycheck_winning_move(best1.move))
+			// Not for chess, for MNK-like only
+			if (position.easycheck_winning_move(best.move))
 			{
-				best1 = { move1, EvalValue::Win<player1>() };
 				position -= move1;
-				break;
+				return { move1, EvalValue::Win<player1>() };
 			}
 
-			any_moves1 = true;
-
-			bool any_moves2 = false;
-			MoveVal best2 { Move(), EvalValue::Lose<player2>() };
-
-			for (auto move2 : position.all_legal_moves_played())
-			{
-				if (position.easycheck_winning_move(best2.move))
-				{
-					best2 = { move2, EvalValue::Win<player2>() };
-					position -= move2;
-					break;
-				}
-
-				any_moves2 = true;
-				
-				MoveVal curr = Find<player1>(position, curr_depth + 2, max_depth);
-				position -= move2;
-
-				if (curr.val.is_better<player2>(best2.val))
-					best2 = curr;
-
-				// Cut short
-				if (!best2.val.is_better<player2>(best1.val))
-					break;
-
-				EvalValue val1(0);
-				val1.is_better<player1>(val1);
-			}
-
-			if (!any_moves2)
-			{
-				best2 = MoveVal{
-					move1,
-					position.easycheck_winning_move(best1.move) ? EvalValue::Win<player1>() : 0
-				};
-			}
+			MoveVal best2 = Find<player2>(position, curr_depth + 1, max_depth, best.val);
 			position -= move1;
 
-			if (best2.val.is_better<player2>(best1.val))
-				best1 = best2;
+			// Update the best if the search returned better value for player1
+			if (best2.val.is_better<player1>(best.val))
+				best = { move1, best.val };
+
+			// Cut the search if better than the cut value
+			if (best.val.is_better<player1>(cut))
+				return best;
 		}
-		return best1;
+		return best;
 	}
 };
 

@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "..\BoardGamesEngine\Games\chess.h"
+#include "..\BoardGamesEngine\Algorithms.h"
 
 TEST(chess, all_squares) {
 	int count = 0;
@@ -81,6 +82,7 @@ TEST(chess, invert) {
 	pos_copy.invert();
 	//EXPECT_EQ(pos, pos_copy);
 }
+
 TEST(chess, castle) {
 	chess::ChessPosition<true> pos(std::string("4k3/8/8/8/8/8/8/R3K2R"));
 	chess::ChessPosition<true> copy(pos);
@@ -98,7 +100,6 @@ TEST(chess, castle) {
 	EXPECT_TRUE(right_castle);
 	EXPECT_TRUE(left_castle);
 }
-
 
 TEST(chess, castle_none) {
 	chess::ChessPosition<true> pos(std::string("4k3/8/8/8/8/8/1q4q1/R3K2R"));
@@ -192,6 +193,38 @@ TEST(chess, square_knight_moves)
 		EXPECT_TRUE(squares_visited[i])
 			<< chess::Square(i).chess_notation();
 }
+
+TEST(chess, minmax_vs_random) {
+	for (int round = 1; round <= DebugRelease(20, 4); round++)
+	{
+		chess::ChessPosition<true> pos;
+		pos.track_png();
+		
+		for (int ply = 0; ply < DebugRelease(100, 50); ply++)
+		{
+			// round1: White=minmax, Black=random
+			// round2: White=random, Black=minmax
+			// round3: White=minmax, Black=random
+			// etc
+			bool random = (round + pos.ply()) % 2 == 0;
+			chess::Move move = random ?
+				random_move<chess::ChessPosition<true>, chess::Move>(pos, 0) :
+				MinMax<chess::ChessPosition<true>, chess::Move>::FindBestMove(pos, DebugRelease(2, 4));
+
+			if (!move.is_valid())
+			{
+				EXPECT_TRUE(random) << "round:" << round << " game:" << pos.png() << std::endl;
+				EXPECT_TRUE(pos.is_checked(pos.turn())) << pos.png() << std::endl;
+				break;
+			}
+
+			EXPECT_TRUE(pos.is_legal(move));
+			pos += move;
+		}
+		std::string pgn = pos.png();
+	}
+}
+
 
 TEST(chess, random_games) {
 	for (int seed = 1; seed < DebugRelease(20, 500); seed++)

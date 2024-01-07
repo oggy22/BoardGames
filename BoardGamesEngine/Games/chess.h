@@ -348,7 +348,7 @@ namespace chess {
         {
             if (King1 != other.King1 || King2 != other.King2)
                 return false;
-            if (ply != other.ply)
+            if (_ply != other._ply)
                 return false;
             for (int i = 0; i < 64; i++)
             {
@@ -409,7 +409,7 @@ return true;                                    \
         std::string png()
         {
             std::string ret = "";
-            for (int i = 0; i < ply; i++)
+            for (int i = 0; i < _ply; i++)
             {
                 if (i % 2 == 0)
                 {
@@ -577,10 +577,10 @@ return true;                                    \
         {
             if (_track_png)
             {
-                if (ply == pngs.size())
+                if (_ply == pngs.size())
                     pngs.push_back(move_to_png(move));
                 else
-                    pngs[ply] = move_to_png(move);
+                    pngs[_ply] = move_to_png(move);
             }
 
             DCHECK(square(move.to()) == move.captured());
@@ -957,7 +957,7 @@ if (sq.MOVE() && abs(square(sq)) == PIECE && belongs_to(square(sq), player))    
             return false;
         }
 
-        bool easycheck_winning_move(Move move)
+        bool easycheck_winning_move(Move move) const
         {
             return false;
         }
