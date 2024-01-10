@@ -13,11 +13,17 @@ inline void failure()
 #define STRINGIFY(x) #x
 #define TOSTRING(x) STRINGIFY(x)
 #define AT __FILE__ ":" TOSTRING(__LINE__)
+
+#ifdef _DEBUG
 #define DCHECK(assertion)           \
 {                                   \
     if (!(assertion))               \
         failure();                  \
 }
+#else
+#define DCHECK(assertion) __assume (assertion)
+#endif
+
 
 #define DCHECK_FAIL DCHECK(false); throw "fail";
 
@@ -286,14 +292,14 @@ private:
 class stats
 {
     int _min, _max;
-    int sum, n;
+    int _sum, _n;
 public:
     void reset()
     {
         _min = std::numeric_limits<int8_t>::max();
         _max = std::numeric_limits<int8_t>::min();
-        sum = 0;
-        int n = 0;
+        _sum = 0;
+        _n = 0;
     }
 
     stats()
@@ -303,8 +309,13 @@ public:
 
     float avg()
     {
-		return float(sum) / n;
+		return float(_sum) / _n;
 	}
+
+    int n()
+    {
+        return _n;
+    }
 
     int min()
     {
@@ -318,8 +329,8 @@ public:
 
     void add(int number)
     {
-        sum += number;
-        n++;
+        _sum += number;
+        _n++;
         if (number < _min)
             _min = number;
         if (number > _max)
@@ -338,7 +349,7 @@ Move random_move(Board& board, int seed = 0, int& number_of_moves = s_number_of_
         moves.push_back(move);
     }
 
-    s_number_of_moves = moves.size();
+    number_of_moves = moves.size();
 
     if (moves.size() == 0)
         return Move();

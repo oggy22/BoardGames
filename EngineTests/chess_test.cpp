@@ -225,20 +225,39 @@ TEST(chess, minmax_vs_random) {
 	}
 }
 
+void print_stats(std::ofstream& file, stats stat, std::string name)
+{
+	file << name << ",";
+	file << stat.min() << ",";
+	file << stat.max() << ",";
+	file << stat.avg() << ",";
+	file << stat.n() << std::endl;
+}
 
 TEST(chess, random_games) {
-	for (int seed = 1; seed < DebugRelease(20, 500); seed++)
+	stats total, wins, draws, white_wins, black_wins, in_mats, stalemates;
+	
+	std::ofstream file_csv;
+	file_csv.open("all_games.csv");
+
+	for (int seed = 1; seed <= DebugRelease(20, 1000); seed++)
 	{
 		chess::ChessPosition<true> pos;
 		pos.track_pgn();
-		for (int i = 0; i < 1500; i++)
+		stats moves;
+		int ply;
+		for (ply = 0; ply < 15000; ply++)
 		{
 			Player player = pos.turn();
 			EXPECT_FALSE(pos.is_checked(oponent(player)));
 
 			// Get a random move and check that the board isn't affected
 			chess::ChessPosition<true> pos_backup = pos;
-			chess::Move move = random_move<chess::ChessPosition<true>, chess::Move>(pos, seed);
+			int number_of_moves;
+			chess::Move move = random_move<chess::ChessPosition<true>, chess::Move>(pos, seed, number_of_moves);
+			if (number_of_moves > 0)
+				moves.add(number_of_moves);
+			
 			EXPECT_EQ(pos, pos_backup)
 				<< pos.fen() << std::endl
 				<< pos_backup.fen() << std::endl;
@@ -250,7 +269,26 @@ TEST(chess, random_games) {
 
 			if (!move.is_valid())
 			{
-				std::string pgn = pos.pgn();
+				if (!pos.is_checked())
+				{
+					file_csv << "Stalemate,";
+					draws.add(ply);
+					stalemates.add(ply);
+				}
+				else
+				{
+					wins.add(ply);
+					if (ply % 2 == 1)
+					{
+						file_csv << "WhiteWins,";
+						white_wins.add(ply);
+					}
+					else
+					{
+						file_csv << "BlackWins,";
+						black_wins.add(ply);
+					}
+				}
 				break;
 			}
 
@@ -258,7 +296,9 @@ TEST(chess, random_games) {
 			int count_pieces = 64 - pos.count_piece(chess::Piece::None);
 			if (count_pieces == 2)
 			{
-				std::string pgn = pos.pgn();
+				file_csv << "Insufficient material,";
+				draws.add(ply);
+				in_mats.add(ply);
 				break;
 			}
 			if (count_pieces == 3)
@@ -271,6 +311,9 @@ TEST(chess, random_games) {
 					{
 						std::string pgn = pos.pgn();
 						should_break = true;
+						file_csv << "Insufficient material,";
+						draws.add(ply);
+						in_mats.add(ply);
 						break;
 					}
 				}
@@ -293,14 +336,42 @@ TEST(chess, random_games) {
 
 			// Only 2 kings and no check to the player played
 			EXPECT_EQ(1, pos.count_piece(chess::Piece::King))
-				<< i << " " << move.chess_notation() << std::endl
+				<< ply << " " << move.chess_notation() << std::endl
 				<< pos.fen() << std::endl;
 			EXPECT_EQ(1, pos.count_piece(chess::Piece::OtherKing))
-				<< i << " " << move.chess_notation() << std::endl
+				<< ply << " " << move.chess_notation() << std::endl
 				<< pos.fen() << std::endl;
 			EXPECT_FALSE(pos.is_checked(player))
-				<< i << " " << move.chess_notation() << std::endl
+				<< ply << " " << move.chess_notation() << std::endl
 				<< pos.fen() << std::endl;
 		}
+		total.add(ply);
+
+		std::string png = pos.pgn();
+		std::ofstream file_game;
+		file_game.open(std::string("game") + std::to_string(seed) + ".pgn");
+		file_game << png;
+
+		file_csv << (ply % 2 == 1 ? "White" : "Black") << ",";
+		file_csv << ply << ",";
+		file_csv << (ply + 1) / 2 << ",";
+		file_csv << moves.min() << ",";
+		file_csv << moves.max() << ",";
+		file_csv << moves.avg() << ",";
+		file_csv << pos.fen() << ",";
+		file_csv << pos.pgn() << std::endl;
 	}
+
+	std::ofstream all_stats;
+	all_stats.open("all_stats.csv");
+	all_stats << ", min ply, max ply, avg ply, #" << std::endl;
+	print_stats(all_stats, white_wins, "WhiteWins");
+	print_stats(all_stats, black_wins, "BlackWins");
+	print_stats(all_stats, wins, "Wins");
+
+	print_stats(all_stats, in_mats, "Insufficient material");
+	print_stats(all_stats, stalemates, "Stalemates");
+	print_stats(all_stats, draws, "Draws");
+
+	print_stats(all_stats, total, "Total");
 }

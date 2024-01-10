@@ -891,6 +891,11 @@ if (sq2.MOVE() && !belongs_to(square(sq2), player) && CONDITION)      \
             return false;
         }
 
+        bool is_checked() const
+        {
+            return is_checked(turn());
+        }
+
         bool is_checked(Player player) const
         {
             return is_controlled_by(player == Player::First ? King1 : King2, oponent(player));

@@ -6,6 +6,8 @@
 #pragma once
 
 #include "gtest/gtest.h"
+#include <iostream>
+#include <fstream>
 
 #ifdef _DEBUG
 #define DebugRelease(x,y) x
