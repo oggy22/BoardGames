@@ -55,6 +55,83 @@ TEST(Core, BoardBase8_8) {
 		count++;
 	}
 	EXPECT_EQ(count, 8 * 8);
+}
 
-	//for (auto piece
+template <int W, int H>
+void test_rotate(SquareBase<W, H> start)
+{
+	SquareBase<W, H> square180 = start.rotate_180();
+
+	SquareBase<W, H> square = start.roate_90();
+	EXPECT_TRUE(square.is_valid());
+
+	for (int i = 1; i < 4; i++)
+	{
+		if (i == 2)
+			EXPECT_EQ(square180, square);
+
+		EXPECT_NE(start, square);
+		square = square.roate_90();
+		EXPECT_TRUE(square.is_valid());
+	}
+	EXPECT_EQ(start, square);
+	
+	EXPECT_EQ(start, square180.rotate_180());
+}
+
+TEST(Core, SquareBase_Rotate) {
+	for (SquareBase<2, 2> sq(0); sq.is_valid(); ++sq)
+	{
+		test_rotate(sq);
+	}
+
+	for (SquareBase<3, 3> sq(0); sq.is_valid(); ++sq)
+	{
+		if (sq.x() == 1 && sq.y() == 1)
+			continue;
+
+		test_rotate(sq);
+	}
+
+	for (SquareBase<4, 4> sq(0); sq.is_valid(); ++sq)
+	{
+		test_rotate(sq);
+	}
+}
+
+template <int W, int H>
+void test_rotate(BoardBase<W, H, int>& start)
+{
+	for (SquareBase<W, H> sq(0); sq.is_valid(); ++sq)
+	{
+		start.square(sq) = int(sq);
+	}
+
+	BoardBase<W, H, int> board = start, board180 = start;
+	board180.rotate_180();
+	for (int i = 0; i < 4; i++)
+	{
+		if (i == 2)
+			EXPECT_EQ(board180, board);
+
+		board.roate_90();
+
+		if (i == 3)
+			break;
+
+		EXPECT_NE(board, start);
+	}
+
+	EXPECT_EQ(board, start);
+}
+
+TEST(Core, BoardBase_Rotate) {
+	BoardBase<2, 2, int> board;
+	test_rotate<2, 2>(board);
+
+	BoardBase<3, 3, int> board3;
+	test_rotate<3, 3>(board3);
+
+	BoardBase<4, 4, int> board4;
+	test_rotate<4, 4>(board4);
 }

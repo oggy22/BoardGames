@@ -86,24 +86,36 @@ private:
 		MoveVal best { Move(), EvalValue::Lose<player1>() };
 		for (auto move1 : position.all_legal_moves_played())
 		{
-			// Not for chess, for MNK-like only
-			if (position.easycheck_winning_move(best.move))
+			// Get the first move as best.
+			// Without this assignment, losing positions would keep invalid move Move().
+			if (!best.move.is_valid())
+				best.move = move1;
+
+			// Not for chess, for MNK-like only:
+			// If this is a winning move, return immediately
+			if (position.easycheck_winning_move(move1))
 			{
 				position -= move1;
 				return { move1, EvalValue::Win<player1>() };
 			}
 
+			// Perform recursive call and reverse the move
 			MoveVal best2 = Find<player2>(position, curr_depth + 1, max_depth, best.val);
 			position -= move1;
 
 			// Update the best if the search returned better value for player1
 			if (best2.val.is_better<player1>(best.val))
-				best = { move1, best.val };
+				best = { move1, best2.val };
 
 			// Cut the search if better than the cut value
 			if (best.val.is_better<player1>(cut))
 				return best;
 		}
+
+		// If no moves, value=0. TODO: Check what is needed for chess in draws
+		if (!best.move.is_valid())
+			best.val = 0;
+
 		return best;
 	}
 };

@@ -195,12 +195,12 @@ TEST(chess, square_knight_moves)
 }
 
 TEST(chess, minmax_vs_random) {
-	for (int round = 1; round <= DebugRelease(20, 4); round++)
+	for (int round = 1; round <= DebugRelease(4, 10); round++)
 	{
 		chess::ChessPosition<true> pos;
 		pos.track_pgn();
 		
-		for (int ply = 0; ply < DebugRelease(100, 50); ply++)
+		for (int ply = 0; ply < 100; ply++)
 		{
 			// round1: White=minmax, Black=random
 			// round2: White=random, Black=minmax

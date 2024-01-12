@@ -58,6 +58,8 @@ public:
         DCHECK(0 <= y && y < H);
     }
 
+    bool operator==(const SquareBase& sq) const = default;
+
     int x() const
     {
         return _square % W;
@@ -78,9 +80,14 @@ public:
     bool move_downleft() { return move_down() && move_left(); }
     bool move_downright() { return move_down() && move_right(); }
 
-    SquareBase flip_horizontally() { return Square(W-x()-1, y()); }
-    SquareBase flip_vertifaclly() { return Square(x(), H-y() - 1); }
-    SquareBase rotate_180() { return Square(W*H - 1 - _square); }
+    SquareBase flip_horizontally() { return SquareBase(W-x()-1, y()); }
+    SquareBase flip_vertifaclly() { return SquareBase(x(), H-y() - 1); }
+    SquareBase rotate_180() { return SquareBase(W*H - 1 - _square); }
+    SquareBase roate_90()
+    {
+        static_assert(W == H, "Allowed only for square boards");
+        return SquareBase(W - 1 - y(), x());
+    }
 
     bool operator++()
     {
@@ -95,9 +102,9 @@ public:
         return true;
     }
 
-    operator int() { return int(_square); }
+    operator int() const { return int(_square); }
 
-    bool is_valid()
+    bool is_valid() const
     {
         return _square < W * H;
     }
@@ -144,11 +151,6 @@ protected:
     int _ply;
     piece_t table[W * H];
 
-    piece_t& operator[](SquareBase<W, H> sq)
-    {
-        return table[int(sq)];
-    }
-
     void move()
     {
 		_turn = oponent(_turn);
@@ -166,19 +168,31 @@ protected:
     {
         _turn = oponent(_turn);
     }
-public:
-    Player turn() const { return _turn; }
-    int ply() const{ return _ply; }
-    BoardBase() : _turn(Player::First), _ply(0) { }
-
-    piece_t operator[](SquareBase<W, H> sq) const
+    piece_t& operator[](const SquareBase<W, H> sq)
     {
         return table[int(sq)];
     }
 
-    piece_t square(SquareBase<W, H> sq) const { return table[sq]; }
+public:
+    piece_t operator[](const SquareBase<W, H> sq) const
+    {
+        return table[int(sq)];
+    }
+
+    piece_t operator()(int x, int y) const
+    {
+        return table[SquareBase<W, H>(x, y)];
+    }
+
+    Player turn() const { return _turn; }
+    int ply() const{ return _ply; }
+    BoardBase() : _turn(Player::First), _ply(0) { }
+
+    bool operator==(const BoardBase& board) const = default;
+
+    piece_t square(const SquareBase<W, H> sq) const { return table[sq]; }
     
-    piece_t& square(SquareBase<W, H> sq) { return table[sq]; }
+    piece_t& square(const SquareBase<W, H> sq) { return table[sq]; }
 
     std::experimental::generator<piece_t> get_pieces() const
     {
@@ -225,6 +239,7 @@ public:
                 co_yield sq;
         } while (++sq);
     }
+
     int count_piece(piece_t piece) const
     {
         int ret = 0;
@@ -234,6 +249,36 @@ public:
                 ret++;
         }
         return ret;
+    }
+
+    void roate_90()
+    {
+        static_assert(W == H, "Allowed only for square boards");
+        for (int x = 0; x < (W+1) / 2; x++)
+            for (int y = 0; y < W / 2; y++)
+            {
+                SquareBase<W, H> start(x, y);
+                piece_t buffer = square(start);
+                
+                SquareBase<W, H> sq = start;
+                SquareBase<W, H> new_sq;
+                for (int i = 0; i < 3; i++)
+                {
+                    new_sq = sq.roate_90();
+                    square(sq) = square(new_sq);
+                    sq = new_sq;
+                }
+                square(sq) = buffer;
+                DCHECK(sq == start);
+            }
+    }
+
+    void rotate_180()
+    {
+        for (SquareBase<W, H> start(0), end(W* H - 1); start < end; ++start, --end)
+        {
+            std::swap(square(start), square(end));
+        }
     }
 };
 

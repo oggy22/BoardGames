@@ -18,11 +18,30 @@ enum class Field : int8_t
 	Empty = 0, X = 1, O = -1
 };
 
+inline std::ostream& operator<<(std::ostream& os, Field field)
+{
+	if (field == Field::X)
+		os << 'X';
+	else if (field == Field::O)
+		os << 'O';
+	else
+		os << ' ';
+	return os;
+}
+
 template <int W, int H>
 struct Move
 {
 	SquareBase<W, H> square;
 	Field field;
+	bool is_valid() const
+	{
+		return square.is_valid();
+	}
+	std::string chess_notation() const
+	{
+		return square.chess_notation();
+	}
 };
 
 template <
@@ -38,6 +57,10 @@ class MNKGeneralized : public BoardBase<W, H, Field>
 	static_assert(R <= W && R <= H, "R may not be greater than either dimension");
 
 public:
+	float Evaluate()
+	{
+		return 0;
+	}
 
 	MNKGeneralized()
 	{
@@ -171,11 +194,17 @@ public:
 		return true;
 	}
 
+	bool is_legal(Move<W,H> move) const
+	{
+		DCHECK(move.field != Field::Empty);
+		return (*this)[move.square] == Field::Empty;
+	}
+
 	bool easycheck_winning_move(Move<W, H> move)
 	{
 		SquareBase<W, H> sq;
 
-#define COUNT_DIRECTION(MOVE, COUNTER) { sq = move.square; while (sq.MOVE() && (*this)(sq) == move.field) { COUNTER++; } };
+#define COUNT_DIRECTION(MOVE, COUNTER) { sq = move.square; while (sq.MOVE() && this->square(sq) == move.field) { COUNTER++; } };
 
 		// Check vertically
 		int up = 0, down = 0;
@@ -206,14 +235,25 @@ public:
 
 		// Check other diagonal
 		int up_left = 0, down_right = 0;
-		COUNT_DIRECTION(move_up_left, up_left);
-		COUNT_DIRECTION(move_down_right, down_right);
-		if (down_left + up_right + 1 >= R) return true;
+		COUNT_DIRECTION(move_upleft, up_left);
+		COUNT_DIRECTION(move_downright, down_right);
+		if (down_right + up_left + 1 >= R) return true;
 
 		return false;
 	}
-};
 
+	void operator+=(Move<W, H> move)
+	{
+		this->move();
+		this->square(move.square) = move.field;
+	}
+
+	void operator-=(Move<W, H> move)
+	{
+		this->reverse_move();
+		this->square(move.square) = Field::Empty;
+	}
+};
 
 template<int W, int H>
 struct FieldsOptimized {
@@ -249,7 +289,53 @@ template <
 class MNK : public MNKGeneralized<W, DimProp::None, H, DimProp::None, R, false, false, false>
 {
 public:
+	MNK() { }
+
+	MNK(std::string fen)
+	{
+		SquareBase<W, H> sq(0);
+		for (int i = 0; i < fen.length(); i++)
+		{
+			DCHECK(sq.is_valid());
+			if (fen[i] == '/')
+			{
+				DCHECK(i != 0);
+				DCHECK(i != fen.length() - 1);
+				DCHECK(fen[i - 1] != '/');
+				DCHECK(sq.x() == 0);
+				continue;
+			}
+			switch (fen[i])
+			{
+			case 'X': case 'x': this->square(sq) = Field::X; ++sq; break;
+			case 'O': case 'o': this->square(sq) = Field::O; ++sq; break;
+			case '0': case '1':
+			case '2': case '3':
+			case '4': case '5':
+			case '6': case '7':
+			case '8': case '9': for (int j = 0; j < fen[i] - '0'; j++, ++sq)
+			{
+				this->square(sq) = Field::Empty;
+			} break;
+			default: DCHECK(false);
+			};
+		}
+	}
+
 	static FieldsOptimized<W, H> fo;
+
+	std::experimental::generator<Move<W, H>> all_legal_moves_played()
+	{
+		for (SquareBase<W, H> sq : this->empty_squares())
+		{
+			Move<W, H> move;
+			move.square = sq;
+			move.field = this->turn() == Player::First ? Field::X : Field::O;
+			this->move();
+			this->square(move.square) = move.field;
+			co_yield move;
+		}
+	}
 
 	std::experimental::generator<Move<W, H>> all_legal_moves() const
 	{
@@ -277,3 +363,24 @@ class TicTacToe : public MNK<3,3,3>
 {
 
 };
+
+template <
+	int W, DimProp dpw,
+	int H, DimProp dph,
+	int R,
+	bool ExactRequired,
+	bool OnlyXs,
+	bool OneFirstOnly>
+inline std::ostream& operator<<(std::ostream& os, const MNKGeneralized<W, dpw, H, dph, R, ExactRequired, OnlyXs, OneFirstOnly>& mnk)
+{
+	for (int y = H - 1; y >= 0; y--)
+	{
+		os << '|';
+		for (int x = 0; x < W; x++)
+			os << mnk(x, y);
+		os << '|' << std::endl;
+	}	
+	return os;
+}
+
+

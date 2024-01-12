@@ -560,6 +560,7 @@ return true;                                    \
 
         Piece operator[](Square square) const { return table[square]; }
 
+#pragma region Move handling
         bool castle_rook(Piece king_piece, chess::Square king, Piece rook_piece, chess::Square rook1, chess::Square rook2)
         {
             if (square(king) == king_piece)
@@ -635,6 +636,7 @@ return true;                                    \
             square(move.to()) = move.captured();
             BoardBase::reverse_move();
         }
+#pragma endregion
 
         std::experimental::generator<Move> all_legal_moves_played()
         {
