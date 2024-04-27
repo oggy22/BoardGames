@@ -6,6 +6,9 @@
 /BoardGames/x64
 /BoardGamesEngine/Debug
 /EngineTests/x64
+/EngineTests/*pgn
+/EngineTests/*csv
+/EngineTests/*log
 /x64
 /packages
 /TestResults

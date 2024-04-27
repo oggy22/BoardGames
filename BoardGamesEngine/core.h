@@ -131,6 +131,19 @@ public:
         return ret;
     }
 
+    /// <summary>
+    /// Extends the chess field color. A1 is black, A2 is white, etc.
+    /// </summary>
+    /// <returns>True for A1,A3...,B2,B4.., false otherwise</returns>
+    bool is_black() const
+    {
+        return (x() + y()) % 2 == 0;
+    }
+
+    bool is_white() const
+    {
+        return (x() + y()) % 2 == 1;
+    }
 protected:
     static_assert(W * H < (1 << 16));
 
@@ -214,10 +227,20 @@ public:
 
     std::experimental::generator<SquareBase<W, H>> get_squares() const
     {
-        SquareBase<W, H> sq;
+        SquareBase<W, H> sq(0);
         do
         {
             co_yield sq;
+        } while (++sq);
+    }
+
+    std::experimental::generator<SquareBase<W, H>> get_black_squares() const
+    {
+        SquareBase<W, H> sq;
+        do
+        {
+            if (sq.is_black())
+                co_yield sq;
         } while (++sq);
     }
 
@@ -383,10 +406,10 @@ public:
     }
 };
 
-static int s_number_of_moves;
+static size_t s_number_of_moves;
 
 template <typename Board, typename Move>
-Move random_move(Board& board, int seed = 0, int& number_of_moves = s_number_of_moves)
+Move random_move(Board& board, int seed = 0, size_t& number_of_moves = s_number_of_moves)
 {
     std::vector<Move> moves;
     for (Move move : board.all_legal_moves())

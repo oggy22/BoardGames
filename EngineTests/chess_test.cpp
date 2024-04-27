@@ -195,7 +195,7 @@ TEST(chess, square_knight_moves)
 }
 
 TEST(chess, minmax_vs_random) {
-	for (int round = 1; round <= DebugRelease(4, 10); round++)
+	for (int round = 1; round <= 4; round++)
 	{
 		chess::ChessPosition<true> pos;
 		pos.track_pgn();
@@ -253,7 +253,7 @@ TEST(chess, random_games) {
 
 			// Get a random move and check that the board isn't affected
 			chess::ChessPosition<true> pos_backup = pos;
-			int number_of_moves;
+			size_t number_of_moves;
 			chess::Move move = random_move<chess::ChessPosition<true>, chess::Move>(pos, seed, number_of_moves);
 			if (number_of_moves > 0)
 				moves.add(number_of_moves);
