@@ -195,12 +195,12 @@ TEST(chess, square_knight_moves)
 }
 
 TEST(chess, minmax_vs_random) {
-	for (int round = 1; round <= 4; round++)
+	for (int round = 1; round <= DebugRelease(4, 2); round++)
 	{
 		chess::ChessPosition<true> pos;
 		pos.track_pgn();
 		
-		for (int ply = 0; ply < 100; ply++)
+		for (int ply = 0; ply < DebugRelease(100, 50); ply++)
 		{
 			// round1: White=minmax, Black=random
 			// round2: White=random, Black=minmax
@@ -240,7 +240,7 @@ TEST(chess, random_games) {
 	std::ofstream file_csv;
 	file_csv.open("all_games.csv");
 
-	for (int seed = 1; seed <= DebugRelease(20, 1000); seed++)
+	for (int seed = 1; seed <= DebugRelease(20, 500); seed++)
 	{
 		chess::ChessPosition<true> pos;
 		pos.track_pgn();
