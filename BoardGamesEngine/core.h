@@ -181,6 +181,7 @@ protected:
     {
         _turn = oponent(_turn);
     }
+
     piece_t& operator[](const SquareBase<W, H> sq)
     {
         return table[int(sq)];
@@ -225,7 +226,7 @@ public:
         } while (--sq);
     }
 
-    std::experimental::generator<SquareBase<W, H>> get_squares() const
+    static std::experimental::generator<SquareBase<W, H>> get_squares()
     {
         SquareBase<W, H> sq(0);
         do
@@ -234,9 +235,9 @@ public:
         } while (++sq);
     }
 
-    std::experimental::generator<SquareBase<W, H>> get_black_squares() const
+    static std::experimental::generator<SquareBase<W, H>> get_black_squares()
     {
-        SquareBase<W, H> sq;
+        SquareBase<W, H> sq(0);
         do
         {
             if (sq.is_black())

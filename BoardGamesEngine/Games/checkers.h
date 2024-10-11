@@ -33,6 +33,11 @@ public:
 	Square to() { return _to; }
 	Square cap1() { return _cap1; }
 	Square cap2() { return _cap2; }
+
+	std::string notation()
+	{
+		return _from.chess_notation() + "-" + _to.chess_notation();
+	}
 };
 
 class CheckersPosition : public BoardBase<8, 8, Piece>
@@ -67,6 +72,7 @@ public:
 	{
 		(*this)[move.to()] = (*this)[move.from()];
 		(*this)[move.from()] = Piece::None;
+		this->move();
 		if (!move.cap1().is_valid())
 			return;
 		(*this)[move.cap1()] = Piece::None;
@@ -78,18 +84,19 @@ public:
 	void operator-=(Move move)
 	{
 		(*this)[move.from()] = (*this)[move.to()];
-		(*this)[move.from()] = Piece::None;
+		(*this)[move.to()] = Piece::None;
+		this->reverse_move();
 		if (!move.cap1().is_valid())
 			return;
-		(*this)[move.cap1()] = Piece::None;
+		(*this)[move.cap1()] = (*this)[move.from()];
 		if (!move.cap2().is_valid())
 			return;
-		(*this)[move.cap2()] = Piece::None;
+		(*this)[move.cap2()] = (*this)[move.from()];
 	}
 
 	bool easycheck_winning_move(Move move) { return false; }
 
-	std::experimental::generator<Square> get_all_legal_squares()
+	std::experimental::generator<Square> get_all_legal_squares() const
 	{
 		Square sq;
 		do
@@ -121,7 +128,7 @@ public:
 		}
 	}
 
-	std::experimental::generator<Move> jump_move(Player player, Square sq)
+	std::experimental::generator<Move> jump_move(Player player, Square sq) const
 	{
 #define JUMP_MOVE(move)												\
 sq2 = sq;															\
@@ -163,17 +170,33 @@ if (sq2.move() && belongs_to((*this)[sq2], oponent(player)))		\
 		}
 	}
 
-	std::experimental::generator<Move> all_legal_moves_played()
+	std::experimental::generator<Move> all_legal_moves() const
 	{
 		for (auto sq : get_black_squares())
 		{
 			if (!belongs_to((*this)[sq], turn()))
 				continue;
 			
+			bool any_recursive_moves = false;
+			//for (auto move : jump_move_recursive(turn(), sq))
+			//{
+			//	//co_yield move;
+			//	any_recursive_moves = true;
+			//}
+			
 			for (auto sq2 : forward_squares(turn(), sq))
 			{
 				co_yield Move(sq, sq2);
 			}
+		}
+	}
+
+	std::experimental::generator<Move> all_legal_moves_played()
+	{
+		for (auto move : all_legal_moves())
+		{
+			(*this) += move;
+			co_yield move;
 		}
 	}
 
