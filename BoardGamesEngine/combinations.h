@@ -160,11 +160,16 @@ public:
 		DCHECK(index >= 0);
 		DCHECK(index < nk(n, k));
 		// (n/k) = (n-1/k-1) + (n-1/k)
-		// (4/2) = 6
+		// (4/2) = (3/1) + (3/2) = 6
 		// 1100, 1010, 1001, 0110, 0101, 0011
 		int n_ = n, k_ = k;
 		for (; n_ > 0; n_--)
 		{
+			if (k_ == 0)
+			{
+				while (--n >= 0) { co_yield false; }
+				co_return;
+			}
  			SIZE treshold = nk(n_ - 1, k_ - 1);
 			co_yield index < treshold;
 			if (index >= treshold)

@@ -23,8 +23,8 @@ class Move
 	Square _from, _to, _cap1, _cap2;
 public:
 	Move() : _from(Square()) {}
-	Move(Square from, Square to) : _from(from), _to(to), _cap1(0-1), _cap2(0 - 1) { }
-	Move(Square from, Square to, Square cap1) : _from(from), _to(to), _cap1(cap1), _cap2(0 - 1) { }
+	Move(Square from, Square to) : _from(from), _to(to), _cap1(), _cap2() { }
+	Move(Square from, Square to, Square cap1) : _from(from), _to(to), _cap1(cap1), _cap2() { }
 	Move(Square from, Square to, Square cap1, Square cap2) : _from(from), _to(to), _cap1(cap1), _cap2(cap2) { }
 
 	bool is_valid() { return _from.is_valid(); }

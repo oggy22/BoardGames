@@ -7,7 +7,8 @@
 
 inline void failure()
 {
-
+    //TODO: find a better way to fail
+    throw "failure";
 }
 
 #define STRINGIFY(x) #x
@@ -293,7 +294,7 @@ public:
                     sq = new_sq;
                 }
                 square(sq) = buffer;
-                DCHECK(sq == start);
+                DCHECK(sq.roate_90() == start);
             }
     }
 
