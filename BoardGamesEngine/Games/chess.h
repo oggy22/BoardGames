@@ -969,7 +969,7 @@ if (sq.MOVE() && abs(square(sq)) == PIECE && belongs_to(square(sq), player))    
             return false;
         }
 
-        bool is_check_mate(Player player = Player::First) { return is_checked(player) && !any_legal_moves(); }
+        bool is_check_mate() { return is_checked(turn()) && !any_legal_moves(); }
         bool no_pawns_1and8() { return true; }
         bool is_valid(Player)
         {

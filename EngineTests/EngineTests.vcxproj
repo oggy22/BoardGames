@@ -38,6 +38,7 @@
   <ItemGroup>
     <ClCompile Include="algorithms_test.cpp" />
     <ClCompile Include="checkers_test.cpp" />
+    <ClCompile Include="chess_puzzles.cpp" />
     <ClCompile Include="chess_test.cpp" />
     <ClCompile Include="combination_test.cpp" />
     <ClCompile Include="Connect4_test.cpp" />

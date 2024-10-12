@@ -304,6 +304,11 @@ public:
             std::swap(square(start), square(end));
         }
     }
+
+    consteval bool is_checked(Player player) const
+    {
+        return false;
+    }
 };
 
 /// <summary>

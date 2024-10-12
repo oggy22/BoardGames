@@ -112,9 +112,13 @@ private:
 				return best;
 		}
 
-		// If no moves, value=0. TODO: Check what is needed for chess in draws
+		// If no moves, value=0. For chess verify if checked, then lose.
 		if (!best.move.is_valid())
-			best.val = 0;
+		{
+			best.val = position.is_checked(player1)
+				? EvalValue::Lose<player1>()
+				: 0;
+		}
 
 		return best;
 	}
