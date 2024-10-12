@@ -256,7 +256,7 @@ TEST(chess, random_games) {
 			size_t number_of_moves;
 			chess::Move move = random_move<chess::ChessPosition<true>, chess::Move>(pos, seed, number_of_moves);
 			if (number_of_moves > 0)
-				moves.add(number_of_moves);
+				moves.add(int(number_of_moves));
 			
 			EXPECT_EQ(pos, pos_backup)
 				<< pos.fen() << std::endl

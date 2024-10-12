@@ -305,7 +305,9 @@ public:
         }
     }
 
-    consteval bool is_checked(Player player) const
+    //TODO: consteval results in ""call to immediate function is not a constant expression"
+    // but intent is to optimize this function out.
+    constexpr bool is_checked(Player player) const
     {
         return false;
     }
@@ -430,7 +432,7 @@ Move random_move(Board& board, int seed = 0, size_t& number_of_moves = s_number_
 
     //std::random_device rd;
     static std::mt19937 gen(seed);
-    std::uniform_int_distribution<> dist(0, moves.size() - 1);
+    std::uniform_int_distribution<> dist(0, int(moves.size()) - 1);
     int index = dist(gen);
     return moves[index];
 }
