@@ -1,6 +1,7 @@
 #pragma once
 
 #include <experimental/generator>
+#include <array>
 #include "..\core.h"
 
 /// <summary>
@@ -197,7 +198,19 @@ public:
 	bool is_legal(Move<W,H> move) const
 	{
 		DCHECK(move.field != Field::Empty);
-		return (*this)[move.square] == Field::Empty;
+		if ((*this)[move.square] != Field::Empty)
+			return false;
+		if constexpr (dph == DimProp::Gravity)
+		{
+			if (move.square.y() > 0 && (*this)[SquareBase<W, H>(move.square.x(), move.square.y()-1)] == Field::Empty)
+				return false;
+		}
+		if constexpr (dpw == DimProp::Gravity)
+		{
+			if (move.square.x() > 0 && (*this)[SquareBase<W, H>(move.square.x() - 1, move.square.y())] == Field::Empty)
+				return false;
+		}
+		return true;
 	}
 
 	bool easycheck_winning_move(Move<W, H> move)
@@ -255,21 +268,31 @@ public:
 	}
 };
 
+// Fields sorted by distance from the center of WxH board
 template<int W, int H>
 struct FieldsOptimized {
-	static int distance(SquareBase<W, H> sq)
+	//TODO: using consteval std::abs should be possible in c++23
+	// https://en.cppreference.com/w/cpp/numeric/math/abs
+	static consteval int abs(int i)
+	{
+		if (i < 0) return -i;
+		return i;
+	}
+
+	static constexpr int distance(SquareBase<W, H> sq)
 	{
 		return
 			abs(W - 1 - 2 * sq.x()) +
 			abs(H - 1 - 2 * sq.y());
 	}
 
-	constexpr FieldsOptimized() : arr()
+	consteval FieldsOptimized() : arr()
 	{
 		// Initialize
 		for (int i = 0; i < W * H; ++i)
 			arr[i] = SquareBase<W, H>(i);
 
+		//TODO: use std::sort
 		// Sort them
 		for (int i = 0; i < W * H; ++i)
 			for (int j = i + 1; j < W * H; ++j)
@@ -278,7 +301,43 @@ struct FieldsOptimized {
 					std::swap(arr[i], arr[j]);
 			}
 	}
-	SquareBase<W, H> arr[W * H];
+
+public:
+	static const constexpr SquareBase<W, H> arr[W * H];
+};
+
+// Array sorted by distance from the center
+template<int N>
+struct ArrayOptimized
+{
+	static consteval int abs(int i)
+	{
+		if (i < 0) return -i;
+		return i;
+	}
+
+	static consteval int distance(int i)
+	{
+		return abs(N - 1 - 2 * i);
+	}
+
+	static consteval std::array<int, N> InitializeArray() {
+		std::array<int, N> result;
+		for (int i = 0; i < N; ++i) {
+			result[i] = i;
+		}
+
+		for (int i = 0; i < N; ++i)
+			for (int j = i + 1; j < N; ++j)
+			{
+				if (distance(result[i]) > distance(result[j]))
+					std::swap(result[i], result[j]);
+			}
+		return result;
+	}
+
+public:
+	static const constexpr std::array<int, N> arr = InitializeArray();
 };
 
 template <
@@ -356,7 +415,37 @@ template <
 >
 class MNKGravity : public MNKGeneralized<W, DimProp::None, H, DimProp::Gravity, R, false, false, false>
 {
+public:
+	std::experimental::generator<Move<W, H>> all_legal_moves() const
+	{
+		for (int i = 0; i < W; i++)
+		{
+			SquareBase<W, H> sq(ArrayOptimized<W>::arr[i], 0);
+			Move<W, H> move;
+			move.square = sq;
 
+			bool inside = true;
+			while (inside && this->square(move.square) != Field::Empty)
+			{
+				inside = move.square.move_up();
+			}
+
+			if (inside)
+			{
+				move.field = (this->turn() == Player::First ? Field::X : Field::O);
+				co_yield move;
+			}
+		}
+	}
+
+	std::experimental::generator<Move<W, H>> all_legal_moves_played()
+	{
+		for (auto move : all_legal_moves())
+		{
+			(*this) += move;
+			co_yield move;
+		}
+	}
 };
 
 class TicTacToe : public MNK<3,3,3>

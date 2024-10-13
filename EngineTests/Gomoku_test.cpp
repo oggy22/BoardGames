@@ -4,20 +4,15 @@
 
 using namespace std::placeholders;
 
-FieldsOptimized<15, 15> MNK<15, 15, 5>::fo;
-
 TEST(Gomoku_test, 15)
 {
 	Gomoku15 gomoku15;
-	auto arr = gomoku15.fo.arr;
 }
 
 TEST(Gomoku_test, 19)
 {
 	Gomoku19 gomoku19;
 }
-
-FieldsOptimized<3, 3> MNK<3, 3, 3>::fo;
 
 template <typename T>
 int count_generator(std::function<std::experimental::generator<T>(void)> fun)
