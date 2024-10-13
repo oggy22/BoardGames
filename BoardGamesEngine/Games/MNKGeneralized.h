@@ -43,6 +43,7 @@ struct Move
 	{
 		return square.chess_notation();
 	}
+	auto operator<=>(const Move&) const = default;
 };
 
 template <

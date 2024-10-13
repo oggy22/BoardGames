@@ -39,3 +39,32 @@ TEST(Connect4_test, play_20_moves)
 		connect4 += move;
 	}
 }
+
+TEST(Connect4_test, FourByThree)
+{
+	std::vector<Move<4, 3>> moves = {
+		Move<4, 3>(SquareBase<4, 3>(1, 0), Field::X),
+		Move<4, 3>(SquareBase<4, 3>(2, 0), Field::O),
+		Move<4, 3>(SquareBase<4, 3>(1, 1), Field::X),
+		Move<4, 3>(SquareBase<4, 3>(1, 2), Field::O),
+		Move<4, 3>(SquareBase<4, 3>(2, 1), Field::X),
+		Move<4, 3>(SquareBase<4, 3>(2, 2), Field::O),
+		Move<4, 3>(SquareBase<4, 3>(0, 0), Field::X),
+		Move<4, 3>(SquareBase<4, 3>(0, 1), Field::O),
+		Move<4, 3>(SquareBase<4, 3>(0, 2), Field::X),
+		Move<4, 3>(SquareBase<4, 3>(3, 0), Field::O),
+		Move<4, 3>(SquareBase<4, 3>(3, 1), Field::X),
+	};
+	MNKGravity<4, 3, 3> FourByThree;
+	for (int i = 0; i < moves.size(); i++)
+	{
+		auto move = MinMax<MNKGravity<4, 3, 3>, Move<4, 3>>::FindBestMove(FourByThree, 6);
+		GTEST_LOG_(INFO) << move.chess_notation();
+		if (i < moves.size() - 1)
+			EXPECT_FALSE(FourByThree.easycheck_winning_move(move));
+		else
+			EXPECT_TRUE(FourByThree.easycheck_winning_move(move));
+		FourByThree += move;
+		EXPECT_EQ(moves[i], move) << "Expected move: " << moves[i].chess_notation() << " but got: " << move.chess_notation();
+	}
+}
