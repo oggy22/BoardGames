@@ -66,7 +66,7 @@ public:
 		}
 	}
 
-	float Evaluate() { return 0; }
+ 	int32_t Evaluate() { return 0; }
 
 	void operator+=(Move move)
 	{

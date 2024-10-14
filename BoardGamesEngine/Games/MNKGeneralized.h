@@ -59,7 +59,7 @@ class MNKGeneralized : public BoardBase<W, H, Field>
 	static_assert(R <= W && R <= H, "R may not be greater than either dimension");
 
 public:
-	float Evaluate()
+	int32_t Evaluate()
 	{
 		return 0;
 	}

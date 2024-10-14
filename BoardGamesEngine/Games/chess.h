@@ -329,7 +329,7 @@ namespace chess {
         }
 #pragma endregion
 
-        int Evaluate() const { return 0; }
+        int32_t Evaluate() const { return 0; }
 
         bool play_if_legal(Move move)
         {

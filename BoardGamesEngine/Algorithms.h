@@ -17,28 +17,44 @@ concept BoardPosition = requires(T pos, Q move)
 
 class EvalValue
 {
-	float value;
 public:
-	EvalValue(float val) : value(val) {}
+	typedef int32_t payload_t;
+	
+	static const int max_plys = 100; // Up to 50 moves before mate
+	static const payload_t max = std::numeric_limits<payload_t>::max();
+	EvalValue(payload_t val) : value(val) {}
+
+	///<summary>
+	/// Weaken positions leading to win or lose.
+	/// This helps with prioritizing quicker mates when winning,
+	/// and longer mates when losing.
+	///</summary>
+	void weaken_ending_position()
+	{
+		if (value > max - max_plys)
+			value -= 1;
+		if (value < -max + max_plys)
+			value += 1;
+	}
 
 	template <Player player>
 	static constexpr EvalValue Win()
 	{
 		if constexpr (player == Player::First)
-			return EvalValue(std::numeric_limits<float>::infinity());
+			return EvalValue(max);
 
 		if constexpr (player == Player::Second)
-			return EvalValue(-std::numeric_limits<float>::infinity());
+			return EvalValue(-max);
 	}
 
 	template <Player player>
 	static constexpr EvalValue Lose()
 	{
 		if constexpr (player == Player::First)
-			return EvalValue(-std::numeric_limits<float>::infinity());
+			return EvalValue(-max);
 
 		if constexpr (player == Player::Second)
-			return EvalValue(std::numeric_limits<float>::infinity());
+			return EvalValue(max);
 	}
 
 	template <Player player>
@@ -50,6 +66,8 @@ public:
 		if constexpr (player == Player::Second)
 			return value < other.value;
 	}
+private:
+	payload_t value;
 };
 
 template <typename Pos, typename Move>
@@ -81,7 +99,7 @@ private:
 		constexpr Player player2 = oponent(player1);
 		DCHECK(position.turn() == player1);
 		if (curr_depth == max_depth)
-			return { Move(), float(position.Evaluate()) };
+			return { Move(), (EvalValue::payload_t)(position.Evaluate()) };
 
 		MoveVal best { Move(), EvalValue::Lose<player1>() };
 		for (auto move1 : position.all_legal_moves_played())
@@ -101,6 +119,8 @@ private:
 
 			// Perform recursive call and reverse the move
 			MoveVal best2 = Find<player2>(position, curr_depth + 1, max_depth, best.val);
+			// Help prefer quicker mates
+			best2.val.weaken_ending_position();
 			position -= move1;
 
 			// Update the best if the search returned better value for player1
