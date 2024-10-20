@@ -1064,12 +1064,6 @@ if (sq.MOVE() && abs(square(sq)) == PIECE && belongs_to(square(sq), player))    
         Square King1, King2;
     };
 
-    //template <typename T>
-    //concept bool HasFunc1 =
-    //requires(T t) {
-    //    { t.func1() } -> int;
-    //};
-
     class EndTable
     {
         friend class std::map<std::string, EndTable>;
@@ -1231,14 +1225,6 @@ if (sq.MOVE() && abs(square(sq)) == PIECE && belongs_to(square(sq), player))    
         std::string type;
         size_t second_king;
         TableEntry* table;
-    };
-
-    template <typename T>
-    concept Converter = requires(T t)
-    {
-        // {   T::TableToPosition(std::string(), int()) } -> std::convertible_to<ChessPosition>;
-        {   T::size(EndTable(std::string())) } -> std::convertible_to<SIZE>;
-        {   T::name() } -> std::convertible_to<std::string>;
     };
 
     struct ConverterSimple

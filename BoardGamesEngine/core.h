@@ -417,7 +417,21 @@ public:
 
 static size_t s_number_of_moves;
 
+template <typename T, typename Q>
+concept BoardPosition = requires(T pos, Q move, Player player)
+{
+    { pos.all_legal_moves() } -> std::convertible_to<std::experimental::generator<Q>>;
+    { pos.all_legal_moves_played() } -> std::convertible_to<std::experimental::generator<Q>>;
+    { pos.easycheck_winning_move(move) } -> std::convertible_to<bool>;
+    { pos.turn() } -> std::convertible_to<Player>;
+    { pos.is_checked(player) } -> std::convertible_to<bool>;
+    { pos.Evaluate() } -> std::convertible_to<int>;
+    { pos += move } -> std::convertible_to<void>;
+    { pos -= move } -> std::convertible_to<void>;
+};
+
 template <typename Board, typename Move>
+	requires BoardPosition<Board, Move>
 Move random_move(Board& board, int seed = 0, size_t& number_of_moves = s_number_of_moves)
 {
     std::vector<Move> moves;
