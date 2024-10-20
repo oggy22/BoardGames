@@ -418,9 +418,9 @@ public:
 static size_t s_number_of_moves;
 
 template <typename T, typename Q>
-concept BoardPosition = requires(T pos, Q move, Player player)
+concept BoardPosition = requires(T pos, const T const_pos, Q move, Player player)
 {
-    { pos.all_legal_moves() } -> std::convertible_to<std::experimental::generator<Q>>;
+    { const_pos.all_legal_moves() } -> std::convertible_to<std::experimental::generator<Q>>;
     { pos.all_legal_moves_played() } -> std::convertible_to<std::experimental::generator<Q>>;
     { pos.easycheck_winning_move(move) } -> std::convertible_to<bool>;
     { pos.turn() } -> std::convertible_to<Player>;

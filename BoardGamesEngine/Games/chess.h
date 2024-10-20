@@ -875,11 +875,13 @@ if (sq2.MOVE() && !belongs_to(square(sq2), player) && CONDITION)      \
             return true;
         }
 
-        std::experimental::generator<Move> all_legal_moves()
+        std::experimental::generator<Move> all_legal_moves() const
         {
-            for (auto move : all_legal_moves_played())
+            auto nonConstThis = const_cast<ChessPosition*>(this);
+
+            for (auto move : nonConstThis->all_legal_moves_played())
             {
-                (*this) -= move;
+                (*nonConstThis) -= move;
                 co_yield move;
             }
         }
