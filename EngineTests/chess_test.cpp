@@ -31,7 +31,7 @@ TEST(chess, init_position) {
 	{
 		chess::Square square_flip = square.flip_vertifaclly();
 
-		EXPECT_EQ(pos[square], -pos[square_flip])
+		EXPECT_EQ(pos[square], other(pos[square_flip]))
 			<< "comparing " << square.chess_notation() << " and " << square_flip.chess_notation() << std::endl;
 	}
 
@@ -232,6 +232,14 @@ void print_stats(std::ofstream& file, stats stat, std::string name)
 	file << stat.max() << ",";
 	file << stat.avg() << ",";
 	file << stat.n() << std::endl;
+}
+
+TEST(chess, flip_board_test_initial)
+{
+	chess::ChessPosition<true> pos;
+	chess::ChessPosition<true> pos_copy = pos;
+	pos.flip_board();
+	EXPECT_EQ(pos, pos_copy);
 }
 
 TEST(chess, random_games) {

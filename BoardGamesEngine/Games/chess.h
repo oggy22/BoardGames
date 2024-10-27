@@ -14,7 +14,7 @@
 
 namespace chess {
 
-    enum Piece
+    enum class Piece : int8_t
     {
         None = 0,
         King = 1, Queen = 2, Rook = 3, Bishop = 4, Knight = 5, Pawn = 6,
@@ -23,17 +23,17 @@ namespace chess {
 
     static Piece other(Piece piece)
     {
-        return Piece(0 - piece);
+        return Piece(0 - int8_t(piece));
     }
 
     static Piece abs(Piece piece)
     {
-        return piece > 0 ? piece : Piece(0-piece);
+        return int8_t(piece) > 0 ? piece : other(piece);
     }
 
     static bool belongs_to(Piece piece, Player player)
     {
-        return player == Player::First ? (piece > 0) : (piece < 0);
+        return player == Player::First ? (int8_t(piece) > 0) : (int8_t(piece) < 0);
     };
 
     static char Piece_to_char(Piece piece)
@@ -220,9 +220,15 @@ namespace chess {
     };
 
     template <bool QPO> // Queen Promotions Only
+    class ChessPosition;
+
+    template <bool QPO>
+    class ConverterSimple;
+
+    template <bool QPO> // Queen Promotions Only
     class ChessPosition : public BoardBase<8, 8, Piece>
     {
-        friend struct ConverterSimple;
+        friend class ConverterSimple<QPO>;
         bool _track_pgn = false;
     public:
 
@@ -290,7 +296,7 @@ namespace chess {
                 char upper_c = toupper(c);
                 Piece piece = char_to_piece(upper_c);
                 if (upper_c != c)
-                    piece = Piece(0 - piece);
+                    piece = other(piece);
 
                 if (c == 'K') King1 = sq;
                 if (c == 'k') King2 = sq;
@@ -427,7 +433,7 @@ return true;                                    \
         std::string move_to_pgn(Move move)
         {
             Piece piece = square(move.from());
-            switch (std::abs(piece))
+            switch (abs(piece))
             {
             //King = 1, Queen = 2, Rook = 3, Bishop = 4, Knight = 5, Pawn = 6,
             case Piece::King: return "K" + move.to().chess_notation(true);
@@ -537,8 +543,7 @@ return true;                                    \
                 {
                     Piece bottomPiece = (*this)[bottom];
                     Piece topPiece = (*this)[top];
-                    table[bottom] = Piece(0 - topPiece);
-                    //table[top] = Piece(0 - bottomPiece);
+                    table[bottom] = other(topPiece);
                 }
                 BoardBase::invert();
             }
@@ -610,7 +615,7 @@ return true;                                    \
 
         void operator-=(Move move)
         {
-            DCHECK(square(move.from()) == 0);
+            DCHECK(square(move.from()) == Piece::None);
             if (move.to() == King1)
             {
                 if (move.from() == S("E1"))
@@ -632,7 +637,7 @@ return true;                                    \
             square(move.from()) =
                 move.promotion() == Piece::None
                 ? square(move.to())
-                : (move.promotion() > 0 ? Piece::Pawn : Piece::OtherPawn);
+                : (belongs_to(move.promotion(), Player::First) ? Piece::Pawn : Piece::OtherPawn);
             square(move.to()) = move.captured();
             BoardBase::reverse_move();
         }
@@ -683,7 +688,7 @@ if (sq2.MOVE() && !belongs_to(square(sq2), player) && CONDITION)      \
                 Piece piece = square(sq);
                 if (!belongs_to(piece, player))
                     continue;
-                piece = Piece(std::abs(piece));
+                piece = abs(piece);
                 Square sq2;
                 if (piece == Piece::Queen || piece == Piece::Rook)
                 {
@@ -886,7 +891,7 @@ if (sq2.MOVE() && !belongs_to(square(sq2), player) && CONDITION)      \
             }
         }
 
-        bool any_legal_moves()
+		bool any_legal_moves() const
         {
             for (auto m : all_legal_moves())
             {
@@ -971,7 +976,8 @@ if (sq.MOVE() && abs(square(sq)) == PIECE && belongs_to(square(sq), player))    
             return false;
         }
 
-        bool is_check_mate() { return is_checked(turn()) && !any_legal_moves(); }
+        bool is_check_mate() const { return is_checked(turn()) && !any_legal_moves(); }
+		bool is_lost() const { return is_check_mate(); }
         bool no_pawns_1and8() { return true; }
         bool is_valid(Player)
         {
@@ -994,24 +1000,51 @@ if (sq.MOVE() && abs(square(sq)) == PIECE && belongs_to(square(sq), player))    
             King2 = Square(King2.x(), 7 - King2.y());
         }
 
+        /// <summary>
+		/// Flip rows and invert pieces. Initial position is restored.
+		/// White pawns at 7th rank convert to black pawns at 2nd rank.
+		/// White king at initial position converts to black king at initial position.
+        /// </summary>
+        void flip_board()
+        {
+            Square bottom(0, 0);
+            do
+            {
+                Square top(bottom.x(), 7 - bottom.y());
+                do
+                {
+                    std::swap(square(bottom), square(top));
+                    square(bottom) = other(square(bottom));
+                    square(top) = other(square(top));
+
+                    top.move_right();
+                } while (bottom.move_right());
+            } while (bottom.y() < 4);
+            King1 = Square(King1.x(), 7 - King1.y());
+            King2 = Square(King2.x(), 7 - King2.y());
+			std::swap(King1, King2);
+            this->move();
+            _ply--;
+        }
+
         void flip_columns();
         void flip_rows_and_columns();
-        void flip_board();
+
         std::string generate_endtable_type();
 
         std::experimental::generator<std::pair<char, Square>> get_piece_squares() const
         {
             Square square;
             co_yield std::pair<char, Square>('K', King1);
-            square = Square(); do { if (table[square] == 0 + Piece::Queen)  co_yield std::pair<char, Square>('Q', square); } while (++square);
-            square = Square(); do { if (table[square] == 0 + Piece::Rook)   co_yield std::pair<char, Square>('R', square); } while (++square);
-            square = Square(); do { if (table[square] == 0 + Piece::Bishop) co_yield std::pair<char, Square>('B', square); } while (++square);
-            square = Square(); do { if (table[square] == 0 + Piece::Pawn)   co_yield std::pair<char, Square>('P', square); } while (++square);
+            square = Square(); do { if (table[square] == Piece::Queen)  co_yield std::pair<char, Square>('Q', square); } while (++square);
+            square = Square(); do { if (table[square] == Piece::Rook)   co_yield std::pair<char, Square>('R', square); } while (++square);
+            square = Square(); do { if (table[square] == Piece::Bishop) co_yield std::pair<char, Square>('B', square); } while (++square);
+            square = Square(); do { if (table[square] == Piece::Pawn)   co_yield std::pair<char, Square>('P', square); } while (++square);
             co_yield std::pair<char, Square>('K', King2);
-            square = Square(); do { if (table[square] == 0 - Piece::Queen)  co_yield std::pair<char, Square>('Q', square); } while (++square);
-            square = Square(); do { if (table[square] == 0 - Piece::Rook)   co_yield std::pair<char, Square>('R', square); } while (++square);
-            square = Square(); do { if (table[square] == 0 - Piece::Bishop) co_yield std::pair<char, Square>('B', square); } while (++square);
-            square = Square(); do { if (table[square] == 0 - Piece::Pawn)   co_yield std::pair<char, Square>('P', square); } while (++square);
+            square = Square(); do { if (table[square] == Piece::OtherQueen)  co_yield std::pair<char, Square>('Q', square); } while (++square);
+            square = Square(); do { if (table[square] == Piece::OtherRook)   co_yield std::pair<char, Square>('R', square); } while (++square);
+            square = Square(); do { if (table[square] == Piece::OtherBishop) co_yield std::pair<char, Square>('B', square); } while (++square);
+            square = Square(); do { if (table[square] == Piece::OtherPawn)   co_yield std::pair<char, Square>('P', square); } while (++square);
         }
 
         void get_numbers(int& q1, int& r1, int& b1, int& n1, int& q2, int& r2, int& b2, int& n2)
@@ -1022,14 +1055,14 @@ if (sq.MOVE() && abs(square(sq)) == PIECE && belongs_to(square(sq), player))    
             {
                 switch (table[square])
                 {
-                case 0 + Piece::Queen:  q1++; break;
-                case 0 + Piece::Rook:   r1++; break;
-                case 0 + Piece::Bishop: b1++; break;
-                case 0 + Piece::Knight: n1++; break;
-                case 0 - Piece::Queen:  q2++; break;
-                case 0 - Piece::Rook:   r2++; break;
-                case 0 - Piece::Bishop: b2++; break;
-                case 0 - Piece::Knight: n2++; break;
+                case Piece::Queen:  q1++; break;
+                case Piece::Rook:   r1++; break;
+                case Piece::Bishop: b1++; break;
+                case Piece::Knight: n1++; break;
+                case Piece::OtherQueen:  q2++; break;
+                case Piece::OtherRook:   r2++; break;
+                case Piece::OtherBishop: b2++; break;
+                case Piece::OtherKnight: n2++; break;
                 default:
                     break;
                 }
@@ -1066,235 +1099,154 @@ if (sq.MOVE() && abs(square(sq)) == PIECE && belongs_to(square(sq), player))    
         Square King1, King2;
     };
 
-    class EndTable
-    {
-        friend class std::map<std::string, EndTable>;
-        //friend class std::pair<std::string, EndTable>;
-        static std::map<std::string, EndTable> all_tables_;
 
+    template <bool QPO>
+    /// <summary>
+    /// 64^n
+    /// </summary>
+    class ConverterSimple
+    {
     public:
-        EndTable(const std::string& type);  //todo: this should be private, but build error
-        static EndTable& Create(const std::string& type)
-        {
-            std::cout << "Creating " << type << std::endl;
-            auto p = all_tables_.find(type);
-            if (p != all_tables_.end())
-                return p->second;
-            all_tables_.emplace(type, type);
-            EndTable& table = all_tables_.at(type);
-
-            // Add descendant types
-            for (auto desc : table.get_descendant_types())
-            {
-                Create(desc);
-            }
-
-            Create(table.get_inverse_type());
-
-            return table;
-        }
-
-        static std::experimental::generator<EndTable> all_tables()
-        {
-            for (auto& pair : all_tables_)
-            {
-                co_yield pair.second;
-            }
-        }
-
-        static SIZE total_tables()
-        {
-            return all_tables_.size();
-        }
-
-        std::string get_inverse_type();
-        std::experimental::generator<std::pair<Piece, std::string>> get_captures();
-        std::experimental::generator<std::pair<Piece, std::string>> get_promotions(Piece promo);
-
-        std::experimental::generator<std::string> get_descendant_types();
-        std::experimental::generator<std::string> get_descendant_types_recursive()
-        {
-            std::set<std::string> types;
-            types.insert(type);
-            //for (auto t : )
-        }
-
-        static std::experimental::generator<std::string> get_types(int len);
-
-        //ChessPostion GetChessPostion(size index)
-        //{
-        //    return PositionTableConverter::TableToPosition(type, index);
-        //}
-
-        const std::string& get_type() const { return type; }
-
-        bool has_pawns() const
-        {
-            return type.back() == 'P' || type[second_king - 1] == 'P';
-        }
-
-        template <typename T>
-        SIZE get_size() const
-        {
-            return T::size(*this);
-        }
-
-        template <typename T>
-        void initialize()
-        {
-            // Get tables
-            table = new TableEntry[T::size(*this)];
-
-            // [capture][promotion]
-            std::map<Piece, std::map <Piece, int>> tables;
-
-            // Inverse
-            tables[Piece::None][Piece::None] = Create(get_inverse_type()).table = new TableEntry[T::size(*this)];
-
-            // Captures tables
-            std::map<Piece, TableEntry*> table_cap;
-            for (auto pair : get_captures())
-            {
-                //tables[pair.first][Piece::None] = Get(pair.second);
-            }
-
-            // Promotion tables
-            std::map<Piece, TableEntry*> table_prom;
-            for (auto pair : get_promotions(Piece::Queen))
-            {
-                //tables[Piece::None][Piece::Queen] = Get(pair.second);
-            }
-
-            // Check mates first
-            for (SIZE i = 0; i < size; i++)
-            {
-                ChessPosition position;
-                if (!T::IndexToPosition(*this, i, position))
-                {
-                    table[i] = TableEntry();
-                    continue;
-                }
-
-                if (position.is_check_mate())
-                    table[i] = TableEntry(true);
-                else
-                    table[i] = TableEntry(false);
-            }
-
-            TableEntry search_for = TableEntry(true);
-            TableEntry win = TableEntry::Win(1);
-            TableEntry lose = TableEntry::Lose(1);
-            for (SIZE i = 0; i < size; i++)
-            {
-                ChessPosition position;
-                if (!T::IndexToPosition(*this, i, position))
-                    continue;
-
-                if (position.exists_move([](const ChessPosition& pos)
-                    {
-                        SIZE index = T::PositionToIndex(position);
-                        //if (table[index] == )
-                        return false;
-                    }))
-                    table[i] = win;
-
-                    bool found = false;
-                    for (auto move : position.all_legal_moves())
-                    {
-                        // TODO: This still needs some polishing. It will work only when no flipping needed, ConverterSimple
-                        position += move;
-                        position.flip_board();
-                        SIZE index = T::PositionToIndex(position);
-
-                        TableEntry* table_dep = tables[Piece::None][Piece::None];
-                        if (move.captured() != Piece::None)
-                            table_dep = table_cap[move.captured()];
-
-                        if (table_dep[index] == search_for)
-                        {
-                            table[i] = win;
-                            found = true;
-                        }
-                        position.flip_board();
-                        position -= move;
-                        if (found)
-                            break;
-                    }
-            }
-        }
-    private:
-        SIZE size = 0;
-        std::string type;
-        size_t second_king;
-        TableEntry* table;
-    };
-
-    struct ConverterSimple
-    {
+		using Position = chess::ChessPosition<QPO>;
+        using Move = chess::Move;
+        using Key = std::string;
         static std::string name() { return "ConverterSimple"; }
-        static SIZE size(const EndTable& end_table)
+        static SIZE KeyToSize(std::string key)
         {
-            return (SIZE)(1) << (6 * end_table.get_type().length());
+            return (SIZE)(1) << (6 * key.length());
         }
 
-        template <bool QPO>
+    	static std::experimental::generator<std::string> get_dependent_tables(std::string key)
+    	{
+            if (key == "KK")
+                co_return;
+
+    		for (int i = 0; i < key.size(); i++)
+    		{
+    			co_yield key.substr(0, i) + key.substr(i + 1);
+    		}
+    	}
+
+        static std::string get_opponent_table(std::string key)
+        {
+            size_t second_king = key.find('K', 1);
+            DCHECK(second_king != std::string::npos);
+            std::string first = key.substr(second_king);
+            std::string second = key.substr(0, second_king);
+            return first + second;
+        }
+
         static SIZE PositionToIndex(const ChessPosition<QPO>& position)
         {
             SIZE factor = 1;
             SIZE ret = 0;
-            for (auto pair : position.get_pieces())
+            for (auto pair : position.get_piece_squares())
             {
                 ret += pair.second * factor;
                 factor *= 64;
             }
             return ret;
         }
-        template <bool QPO>
-        static ChessPosition<QPO> IndexToPosition(const EndTable& table, SIZE index)
+
+        static bool KeyIndexToPosition(std::string key, SIZE index, ChessPosition<QPO>& pos)
         {
+            //TODO: finish implementation
+            SIZE factor = 1;
+            for (int i = 0; i < key.size(); i++)
+            {
+                //pos.table[index % 64] = char_to_piece(key[i]);
+                //index /= 64;
+            }
+            return false;
+            //return pos.is_legal();
         }
 
-        template <bool QPO>
-        static bool IndexToPosition(const EndTable& table, SIZE index, ChessPosition<QPO>& position)
+        static std::string PositionToKey(const ChessPosition<QPO>& position)
         {
-            bool first = true;
-            bool second = false;
-            for (char c : table.get_type())
+            std::string key;
+            for (auto pair : position.get_piece_squares())
             {
-                Square square = index & 63;
-                if (position.table[square] != Piece::None)
-                    return false;
-                position.table[square] = char_to_piece(c);
-                if (first)
-                {
-                    DCHECK(c == 'K');
-                    first = false;
-                    position.King1 = square;
-                }
-                else if (c == 'K') // second king
-                {
-                    position.King2 = square;
-                    second = true;
-                }
-                DCHECK(second);
+				key += pair.first;
             }
-            return position.is_legal();
+            return key;
         }
+
+        static void flip_if_needed(ChessPosition<QPO>& pos)
+        {
+			//todo: implement
+        }
+        
     };
 
+    template <bool QPO>
+    /// <summary>
+	/// 64x63x62x...x(64-n+1)
+    /// </summary>
     struct ConverterReducing
     {
+        using Position = chess::ChessPosition<QPO>;
+        using Move = chess::Move;
+        using Key = std::string;
+
         static std::string name() { return "ConverterReducing"; }
-        static SIZE size(const EndTable& end_table)
+
+        static SIZE KeyToSize(std::string key)
         {
             SIZE ret = 1;
-            for (int i = 64; i > 64 - end_table.get_type().length(); i--)
+            for (int i = 64; i > 64 - key.length(); i--)
             {
                 ret *= i;
             }
             return ret;
         }
 
+        static std::string get_opponent_table(std::string key)
+        {
+            size_t second_king = key.find('K', 1);
+            DCHECK(second_king != std::string::npos);
+            std::string first = key.substr(second_king);
+            std::string second = key.substr(0, second_king);
+            return first + second;
+        }
+
+        static std::experimental::generator<std::string> get_dependent_tables(std::string key)
+        {
+            size_t second_king = key.find('K', 1);
+            DCHECK(second_king != std::string::npos);
+
+            for (size_t drop_index = second_king+1; drop_index < key.size(); drop_index++)
+            {
+				std::string first = key.substr(second_king, drop_index-second_king) + key.substr(drop_index+1);
+                std::string second = key.substr(0, second_king);
+                co_yield first + second;
+            }
+        }
+
+        static std::string PositionToKey(const ChessPosition<QPO>& position)
+        {
+            //TODO: imlement
+            return "KK";
+        }
+
+        static bool KeyIndexToPosition(std::string key, SIZE index, ChessPosition<QPO>& pos)
+        {
+            return false;
+        }
+
+        static SIZE PositionToIndex(const ChessPosition<QPO>& position)
+        {
+            return 0;
+        }
+
+        static ChessPosition<QPO> IndexToPosition(SIZE index)
+        {
+            return ChessPosition<QPO>();
+        }
+
+        static void flip_if_needed(ChessPosition<QPO>& pos)
+        {
+
+        }
     };
 
     struct ConverterReducingWithPawns
@@ -1306,19 +1258,20 @@ if (sq.MOVE() && abs(square(sq)) == PIECE && belongs_to(square(sq), player))    
 
         // With pawns:
         // 48/2 x 47 ... (48-p+1) x (64-p) x ... x (64-n+1)
-        // Place pawns first. Each pawn cannot take 1st and 8th row so 6x8=48 places. The first one is on the left side, if not flip rows so 48/2=24
-        static SIZE size(const EndTable& end_table)
-        {
-            if (!end_table.has_pawns())
-            {
-                SIZE ret = 10;  // 10 = 1+2+3+4
-                for (SIZE i = 63; i > 64 - SIZE(end_table.get_type().length()); i--)
-                {
-                    ret *= i;
-                }
-                return ret;
-            }
-        }
+        // Place pawns first. Each pawn cannot take 1st and 8th row so 6x8=48 places.
+        // The first one is on the left side, if not flip rows so 48/2=24
+        //static SIZE size(const EndTable& end_table)
+        //{
+        //    if (!end_table.has_pawns())
+        //    {
+        //        SIZE ret = 10;  // 10 = 1+2+3+4
+        //        for (SIZE i = 63; i > 64 - SIZE(end_table.get_type().length()); i--)
+        //        {
+        //            ret *= i;
+        //        }
+        //        return ret;
+        //    }
+        //}
 
         template <bool QPO>
         static SIZE Enumerate(const ChessPosition<QPO>&);

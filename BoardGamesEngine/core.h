@@ -28,7 +28,7 @@ inline void failure()
 
 #define DCHECK_FAIL DCHECK(false); throw "fail";
 
-#define SIZE long long
+#define SIZE size_t
 
 enum class Player : int
 {
@@ -322,13 +322,19 @@ public:
 class TableEntry
 {
     static_assert(std::numeric_limits<int8_t>::min() == 0 - std::numeric_limits<int8_t>::max() - 1);
-    const int8_t Open = 0;
     const int8_t CheckMate = std::numeric_limits<int8_t>::min();
-    TableEntry(int8_t data) : data(data) { }
 public:
+    static const int8_t Open = 0;
     TableEntry()
     {
         data = Open;
+    }
+	TableEntry(int8_t data) : data(data) { }
+
+    TableEntry& operator=(const TableEntry& other)
+    {
+        data = other.data;
+        return *this;
     }
 
     TableEntry(bool check_mate)

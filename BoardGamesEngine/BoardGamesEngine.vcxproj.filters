@@ -46,6 +46,7 @@
     <ClInclude Include="Games\MNK.h">
       <Filter>Games</Filter>
     </ClInclude>
+    <ClInclude Include="endgametable.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Games">

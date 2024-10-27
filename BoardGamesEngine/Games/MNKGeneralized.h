@@ -3,6 +3,7 @@
 #include <experimental/generator>
 #include <array>
 #include "..\core.h"
+#include "..\combinations.h"
 
 /// <summary>
 /// Properties of dimension
@@ -267,6 +268,12 @@ public:
 		this->reverse_move();
 		this->square(move.square) = Field::Empty;
 	}
+
+	bool is_lost() const
+	{
+		// TODO: implement
+		return false;
+	}
 };
 
 // Fields sorted by distance from the center of WxH board
@@ -409,6 +416,9 @@ public:
 	}
 };
 
+template <int W, int H, int R>
+struct MNKGGravityConverter;
+
 template <
 	int W,
 	int H,
@@ -446,6 +456,94 @@ public:
 			(*this) += move;
 			co_yield move;
 		}
+	}
+};
+
+// copilot generated code
+// Custom specialization of std::hash for std::array
+namespace std {
+	template <typename T, std::size_t N>
+	struct hash<std::array<T, N>> {
+		std::size_t operator()(const std::array<T, N>& arr) const {
+			std::size_t hash_value = 0;
+			std::hash<T> hasher;
+			for (const auto& elem : arr) {
+				hash_value ^= hasher(elem) + 0x9e3779b9 + (hash_value << 6) + (hash_value >> 2);
+			}
+			return hash_value;
+		}
+	};
+}
+
+template <int W, int H, int R>
+struct MNKGGravityConverter
+{
+	typedef MNKGravity<W, H, R> Position;
+	typedef std::array<int8_t, W> Key;
+	typedef Move<W, H> Move;
+	static int KeyToLength(Key key)
+	{
+		int length = 0;
+		for (int i = 0; i < W; i++)
+			length += key[i];
+		return length;
+	}
+
+	template <int R>
+	static bool KeyIndexToPosition(Key key, int index, MNKGravity<W, H, R>& pos)
+	{
+		int length = KeyToLength(key);
+
+		pos = MNKGravity<W, H, R>();	// clear-out the content		
+
+		for (bool isX : combination::get_combination(length, length / 2, index))
+		{
+			//todo
+		}
+
+		return 0;
+	}
+
+	static size_t KeyToSize(Key key)
+	{
+		int sum = 0;
+		for (int i = 0; i < W; i++)
+			sum += key[i];
+
+		//todo: calculate NK(sum, sum/2)
+		return 0;
+	}
+
+	static size_t PositionToIndex(const MNKGravity<W, H, R>& pos)
+	{
+		//todo
+		return 0;
+	}
+
+	static Key PositionToKey(const MNKGravity<W, H, R>& pos)
+	{
+		//todo
+		return Key();
+	}
+
+	static bool KeyIndexToPosition(Key key, size_t index, MNKGravity<W, H, R>& pos)
+	{
+		//todo
+		return false;
+	}
+
+	static std::experimental::generator<Key> get_dependent_tables(Key key)
+	{
+		//todo
+		co_return;
+	}
+
+	static Key get_opponent_table(Key key) { return key; }
+
+	static void flip_if_needed(MNKGravity<W, H, R>& pos)
+	{
+		// Do nothing as no flip is needed.
+		// Flip is needed only for games like chess.
 	}
 };
 

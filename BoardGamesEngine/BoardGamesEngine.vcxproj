@@ -166,6 +166,7 @@
     <ClInclude Include="combinations.h" />
     <ClInclude Include="ConverterBatches.h" />
     <ClInclude Include="core.h" />
+    <ClInclude Include="endgametable.h" />
     <ClInclude Include="EvaluationFunctions.h" />
     <ClInclude Include="Games\checkers.h" />
     <ClInclude Include="Games\chess.h" />

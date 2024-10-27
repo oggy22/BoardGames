@@ -2,17 +2,8 @@
 #include "core.h"
 #include <experimental/generator>
 
-#define SIZE long long
+#define SIZE size_t
 
-//class nk_table
-//{
-//public:
-//	nk_table(int n, int k);
-//private:
-//	int table[][];
-//	int n, k;
-//};
-//
 SIZE nk(int n, int k);
 
 class combination_ind
@@ -129,7 +120,7 @@ class combination
 	int n, k;
 	int curr_n, curr_k;
 public:
-	combination(int n, int k) : n(n), k(k), curr_n(0), curr_k(0), index(0)
+	constexpr combination(int n, int k) : n(n), k(k), curr_n(0), curr_k(0), index(0)
 	{
 	}
 
