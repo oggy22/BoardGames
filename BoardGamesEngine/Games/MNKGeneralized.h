@@ -257,6 +257,15 @@ public:
 		return false;
 	}
 
+	bool play_if_legal(Move<W, H> move)
+	{
+		if (this->square(move.square) != Field::Empty)
+			return false;
+
+		operator+=(move);
+		return true;
+	}
+
 	void operator+=(Move<W, H> move)
 	{
 		this->move();

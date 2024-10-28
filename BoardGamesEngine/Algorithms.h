@@ -56,21 +56,34 @@ private:
 	payload_t value;
 };
 
-template <typename Pos, typename Move>
+enum class KillerOptions
+{
+	None = 0,
+	Single = 1,
+	Multiple = 2
+};
+
+template <typename Pos, typename Move, KillerOptions ko = KillerOptions::Single>
 requires BoardPosition<Pos, Move>
 class MinMax
 {
 public:
-	static Move FindBestMove(Pos& position, int depth)
+	static_assert(ko != KillerOptions::Multiple, "KillerOptions::Multiple not implemented");
+	static Move FindBestMove(const Pos& position, int depth)
 	{
 		// depth is an even number greater than zero
 		DCHECK(depth % 2 == 0 && depth > 0);
 
+		MinMax minmax(position, depth);
 		if (position.turn() == Player::First)
-			return Find<Player::First>(position, 0, depth).move;
+			return minmax.Find<Player::First>(0, depth).move;
 		else
-			return Find<Player::Second>(position, 0, depth).move;
+			return minmax.Find<Player::Second>(0, depth).move;
 	}
+
+	std::vector<Move> killer;
+	Pos position;
+	MinMax(const Pos& position, int depth) : killer(depth+1, Move()), position(position) {}
 
 	struct MoveVal
 	{
@@ -79,8 +92,36 @@ public:
 	};
 
 private:
+	std::experimental::generator<Move> all_legal_moves_played_and_killer(int depth)
+	{
+		if constexpr (ko == KillerOptions::Single)
+		{
+			Player turn = position.turn();
+			if (position.play_if_legal(killer[depth]))
+			{
+				DCHECK(position.turn() != turn);
+				co_yield killer[depth];
+			}
+		}
+
+		for (auto move : position.all_legal_moves_played())
+		{
+			if constexpr (ko == KillerOptions::None)
+			{
+				co_yield move;
+			}
+			else if constexpr (ko == KillerOptions::Single)
+			{
+				if (move != killer[depth])
+					co_yield move;
+				else
+					position -= move;
+			}
+		}
+	}
+
 	template <Player player1>
-	static MoveVal Find(Pos& position, int curr_depth, int max_depth, EvalValue cut = EvalValue::Win<player1>())
+	MoveVal Find(int curr_depth, int max_depth, EvalValue cut = EvalValue::Win<player1>())
 	{
 		constexpr Player player2 = oponent(player1);
 		DCHECK(position.turn() == player1);
@@ -88,8 +129,10 @@ private:
 			return { Move(), (EvalValue::payload_t)(position.Evaluate()) };
 
 		MoveVal best { Move(), EvalValue::Lose<player1>() };
-		for (auto move1 : position.all_legal_moves_played())
+		for (auto move1 : all_legal_moves_played_and_killer(curr_depth))
 		{
+			DCHECK(position.turn() == player2);
+
 			// Get the first move as best.
 			// Without this assignment, losing positions would keep invalid move Move().
 			if (!best.move.is_valid())
@@ -104,9 +147,15 @@ private:
 			}
 
 			// Perform recursive call and reverse the move
-			MoveVal best2 = Find<player2>(position, curr_depth + 1, max_depth, best.val);
+			MoveVal best2 = Find<player2>(curr_depth + 1, max_depth, best.val);
 			// Help prefer quicker mates
-			best2.val.weaken_ending_position();
+  			best2.val.weaken_ending_position();
+			if constexpr (ko == KillerOptions::Single)
+			{
+				// Update killer move for the next depth
+				if (!killer[curr_depth + 1].is_valid()) // todo: if not legal as well
+					killer[curr_depth + 1] = best2.move;
+			}
 			position -= move1;
 
 			// Update the best if the search returned better value for player1

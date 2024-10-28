@@ -20,12 +20,20 @@ bool belongs_to(Piece piece, Player player)
 
 class Move
 {
-	Square _from, _to, _cap1, _cap2;
+	Square _from, _to, _cap1, _cap2, _cap3, _cap4;
 public:
+	std::strong_ordering operator<=>(const Move&) const = default;
 	Move() : _from(Square()) {}
-	Move(Square from, Square to) : _from(from), _to(to), _cap1(), _cap2() { }
-	Move(Square from, Square to, Square cap1) : _from(from), _to(to), _cap1(cap1), _cap2() { }
-	Move(Square from, Square to, Square cap1, Square cap2) : _from(from), _to(to), _cap1(cap1), _cap2(cap2) { }
+	Move(Square from, Square to)	// no captures
+		: _from(from), _to(to), _cap1(), _cap2(), _cap3(), _cap4() { }
+	Move(Square from, Square to, Square cap1)	// one capture
+		: _from(from), _to(to), _cap1(cap1), _cap2(), _cap3(), _cap4() { }
+	Move(Square from, Square to, Square cap1, Square cap2)	// two captures
+		: _from(from), _to(to), _cap1(cap1), _cap2(cap2), _cap3(), _cap4() { }
+	Move(Square from, Square to, Square cap1, Square cap2, Square cap3)	// three captures
+		: _from(from), _to(to), _cap1(cap1), _cap2(cap2), _cap3(cap3), _cap4() { }
+	Move(Square from, Square to, Square cap1, Square cap2, Square cap3, Square cap4) // four captures
+		: _from(from), _to(to), _cap1(cap1), _cap2(cap2) { }
 
 	bool is_valid() { return _from.is_valid(); }
 
@@ -68,6 +76,21 @@ public:
 
  	int32_t Evaluate() { return 0; }
 
+	bool play_if_legal(Move move)
+	{
+		if (!move.from().is_valid())
+			return false;
+
+		if (!belongs_to((*this)[move.from()], turn()))
+			return false;
+
+		//TODO: check captures
+
+		(*this) += move;
+
+		return true;
+	}
+	
 	void operator+=(Move move)
 	{
 		(*this)[move.to()] = (*this)[move.from()];
@@ -178,6 +201,8 @@ if (sq2.move() && belongs_to((*this)[sq2], oponent(player)))		\
 				continue;
 			
 			bool any_recursive_moves = false;
+
+			//TODO: implement captures
 			//for (auto move : jump_move_recursive(turn(), sq))
 			//{
 			//	//co_yield move;

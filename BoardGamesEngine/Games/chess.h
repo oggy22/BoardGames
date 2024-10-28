@@ -85,12 +85,12 @@ namespace chess {
     class Square : public SquareBase<8, 8>
     {
     public:
-        Square() : SquareBase() { } // invalid square
-        Square(SquareBase sq) : SquareBase(sq) { }
-        Square(int n) : SquareBase(n) { }
-        Square(int x, int y) : SquareBase(y * 8 + x) {}
-        Square(char letter, char number) : SquareBase(int(letter -'A'), int(number - '1')) { }
-        Square(const char s[3]) : Square(s[0] - 'A', s[1] - '1')
+        constexpr Square() : SquareBase() { } // invalid square
+        constexpr Square(SquareBase sq) : SquareBase(sq) { }
+        constexpr Square(int n) : SquareBase(n) { }
+        constexpr Square(int x, int y) : SquareBase(y * 8 + x) {}
+        constexpr Square(char letter, char number) : SquareBase(int(letter -'A'), int(number - '1')) { }
+        constexpr Square(const char s[3]) : Square(s[0] - 'A', s[1] - '1')
         {
             DCHECK(s[0] >= 'A' && s[0] <= 'H');
             DCHECK(s[1] >= '1' && s[1] <= '8');
@@ -339,6 +339,32 @@ namespace chess {
 
         bool play_if_legal(Move move)
         {
+            for (auto m : all_legal_moves_played())
+            {
+                if (m == move)
+                {
+                    return true;
+                }
+                (*this) -= m;
+            }
+            return false;
+        }
+
+        bool play_if_legal2(Move move)
+        {
+            if (move.captured() != table[move.to()])
+                return false;
+            (*this) += move;
+            if (!is_checked(turn()))
+                return true;
+
+            // If still checked revert the move and return false
+            (*this) -= move;
+            return false;
+        }
+
+        bool play_if_legal3(Move move)
+        {
             if (move.captured() != table[move.to()])
                 return false;
             (*this) += move;
@@ -578,7 +604,7 @@ return true;                                    \
             }
             return false;
         }
-        
+
         void operator+=(Move move)
         {
             if (_track_pgn)
@@ -910,6 +936,9 @@ if (sq2.MOVE() && !belongs_to(square(sq2), player) && CONDITION)      \
             return is_controlled_by(player == Player::First ? King1 : King2, oponent(player));
         }
         
+        // Square start may or may not be occupied.
+        // If it is occupied by a piece, this effectively checks if Player player
+        // can capture or protects this piece.
         bool is_controlled_by(Square start, Player player) const
         {
 #define CHECK_DIRECTION(START, MOVE, PIECES)    \
@@ -971,7 +1000,7 @@ if (sq.MOVE() && abs(square(sq)) == PIECE && belongs_to(square(sq), player))    
             return false;
         }
 
-        bool easycheck_winning_move(Move move) const
+        constexpr bool easycheck_winning_move(Move move) const
         {
             return false;
         }

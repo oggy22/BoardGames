@@ -49,7 +49,7 @@ class SquareBase
 {
 public:
     constexpr SquareBase() : _square(W*H) {}  // invalid square
-    SquareBase(int n) : _square(n)
+    constexpr SquareBase(int n) : _square(n)
     {
         DCHECK(n >= 0 && n < W * H);
     }
