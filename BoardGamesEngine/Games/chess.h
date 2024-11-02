@@ -187,7 +187,7 @@ namespace chess {
     class Move
     {
     public:
-        bool is_valid() { return _from.is_valid(); }
+        bool is_valid() const { return _from.is_valid(); }
         Move() : _from() { }    // invalid move
         Move(Square from, Square to, Piece captured = Piece::None, Piece promotion = Piece::None) :
             _from(from),
@@ -206,10 +206,10 @@ namespace chess {
         void flip_columns();
         void flip_rows_and_columns();
         friend std::ostream& operator<<(std::ostream& os, Move move);
-        Square from() { return _from; }
-        Square to() { return _to; }
-        Piece captured() { return _captured; }
-        Piece promotion() { return _promotion; }
+        Square from() const { return _from; }
+        Square to() const { return _to; }
+        Piece captured() const { return _captured; }
+        Piece promotion() const { return _promotion; }
         std::string chess_notation() const
         {
             std::string ret;
@@ -310,7 +310,6 @@ namespace chess {
         }
 
     public:
-
         ChessPosition(bool only_kings = false)
         {
             for (int i = 0; i < 64; i++)
@@ -363,9 +362,11 @@ namespace chess {
                 construct_from_pgn(png_or_fen);
         }
 
-        std::string fen()
+        std::string fen() const
         {
-            this->flip_rows();
+            auto nonConstThis = const_cast<ChessPosition*>(this);
+
+            nonConstThis->flip_rows();
             Square sq(0);
             std::string fen;
             do
@@ -385,7 +386,7 @@ namespace chess {
                 if (sq.x() == 7)
                     fen += '/';
             } while (++sq);
-            this->flip_rows();
+            nonConstThis->flip_rows();
             
             return fen.substr(0, fen.length()-1);
         }
@@ -455,7 +456,7 @@ for (sq1.DIR(); sq1 < sq2; sq1.DIR())           \
 }                                               \
 return true;                                    \
 
-        bool rook_move(Square sq1, Square sq2)
+        bool rook_move(Square sq1, Square sq2) const
         {
             DCHECK(sq1 != sq2);
             if (sq1 > sq2) std::swap(sq1, sq2);
@@ -742,7 +743,7 @@ return true;                                    \
         }
 
         // Pawns one step before promotion?
-        bool almost_promotion()
+        bool almost_promotion() const
         {
             Square sq = Square(8);
             do { if ((*this)[sq] == Piece::OtherPawn) return true; ++sq; } while (sq < Square(16));
@@ -751,9 +752,8 @@ return true;                                    \
             return false;
         }
         bool any_pawns() const;
-        bool is_legal(Move move) { return square(move.to()) == move.captured(); }
-        bool is_reverse_legal(Move move) { return square(move.from()) == Piece::None && square(move.to()) != Piece::None; }
-        bool is_legal() { throw ""; }
+        bool is_legal(Move move) const { return square(move.to()) == move.captured(); }
+        bool is_reverse_legal(Move move) const { return square(move.from()) == Piece::None && square(move.to()) != Piece::None; }
 
         Piece operator[](Square square) const { return table[square]; }
 
@@ -1048,7 +1048,7 @@ if (sq2.MOVE() && !belongs_to(square(sq2), player) && CONDITION)      \
             return true;
         }
 
-        bool exists_move(bool (*func)(const ChessPosition&))
+        bool exists_move(bool (*func)(const ChessPosition&)) const
         {
             for (auto move : all_legal_moves_played())
             {
@@ -1060,7 +1060,7 @@ if (sq2.MOVE() && !belongs_to(square(sq2), player) && CONDITION)      \
             return false;
         }
 
-        bool for_each_move(bool (*func)(const ChessPosition&))
+        bool for_each_move(bool (*func)(const ChessPosition&)) const
         {
             for (auto move : all_legal_moves_played())
             {
@@ -1173,11 +1173,6 @@ if (sq.MOVE() && abs(square(sq)) == PIECE && belongs_to(square(sq), player))    
 
         bool is_check_mate() const { return is_checked(turn()) && !any_legal_moves(); }
 		bool is_lost() const { return is_check_mate(); }
-        bool no_pawns_1and8() { return true; }
-        bool is_valid(Player)
-        {
-            return is_checked(Player::Second) && no_pawns_1and8();
-        }
 
         void flip_rows()
         {
@@ -1221,11 +1216,6 @@ if (sq.MOVE() && abs(square(sq)) == PIECE && belongs_to(square(sq), player))    
             this->move();
             _ply--;
         }
-
-        void flip_columns();
-        void flip_rows_and_columns();
-
-        std::string generate_endtable_type();
 
         std::experimental::generator<std::pair<char, Square>> get_piece_squares() const
         {

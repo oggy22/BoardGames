@@ -11,7 +11,7 @@ public:
 	EvalValue(payload_t val) : value(val) {}
 
 	///<summary>
-	/// Weaken positions leading to win or lose.
+	/// Weaken the eval of positions leading to win or lose.
 	/// This helps with prioritizing quicker mates when winning,
 	/// and longer mates when losing.
 	///</summary>

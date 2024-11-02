@@ -52,7 +52,6 @@ public:
 		DCHECK_FAIL;
 	}
 
-
 	/// <summary>
 	/// Bottom-up solves the endtables starting from the simplest and going up to the requested table.
 	/// For example, when solving chess table "KQKP", tables are solved in the following order:

@@ -35,14 +35,14 @@ public:
 	Move(Square from, Square to, Square cap1, Square cap2, Square cap3, Square cap4) // four captures
 		: _from(from), _to(to), _cap1(cap1), _cap2(cap2) { }
 
-	bool is_valid() { return _from.is_valid(); }
+	bool is_valid() const { return _from.is_valid(); }
 
-	Square from() { return _from; }
-	Square to() { return _to; }
-	Square cap1() { return _cap1; }
-	Square cap2() { return _cap2; }
+	Square from() const { return _from; }
+	Square to() const { return _to; }
+	Square cap1() const { return _cap1; }
+	Square cap2() const { return _cap2; }
 
-	std::string notation()
+	std::string notation() const
 	{
 		return _from.chess_notation() + "-" + _to.chess_notation();
 	}
@@ -74,7 +74,7 @@ public:
 		}
 	}
 
- 	int32_t Evaluate() { return 0; }
+ 	int32_t Evaluate() const { return 0; }
 
 	bool play_if_legal(Move move)
 	{
@@ -179,7 +179,7 @@ if (sq2.move() && belongs_to((*this)[sq2], oponent(player)))		\
 		}
 	}
 	
-	std::experimental::generator<Move> jump_move_recursive(Player player, Square sq)
+	std::experimental::generator<Move> jump_move_recursive(Player player, Square sq) const
 	{
 		for (Move move : jump_move(player, sq))
 		{

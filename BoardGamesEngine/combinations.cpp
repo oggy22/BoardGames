@@ -33,7 +33,7 @@ public:
 		delete[] table;
 	}
 
-	SIZE& operator()(int n, int k)
+	SIZE& operator()(int n, int k) const
 	{
 		DCHECK(n <= max);
 		DCHECK(n >= k && k >= 0);

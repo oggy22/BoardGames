@@ -60,7 +60,7 @@ class MNKGeneralized : public BoardBase<W, H, Field>
 	static_assert(R <= W && R <= H, "R may not be greater than either dimension");
 
 public:
-	int32_t Evaluate()
+	int32_t Evaluate() const
 	{
 		return 0;
 	}
@@ -215,7 +215,7 @@ public:
 		return true;
 	}
 
-	bool easycheck_winning_move(Move<W, H> move)
+	bool easycheck_winning_move(Move<W, H> move) const
 	{
 		SquareBase<W, H> sq;
 
@@ -323,7 +323,7 @@ public:
 	static const constexpr SquareBase<W, H> arr[W * H];
 };
 
-// Array sorted by distance from the center
+// Array sorted by distance from the center of N elements
 template<int N>
 struct ArrayOptimized
 {

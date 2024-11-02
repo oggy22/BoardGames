@@ -390,22 +390,22 @@ public:
         reset();
     }
 
-    float avg()
+    float avg() const
     {
 		return float(_sum) / _n;
 	}
 
-    int n()
+    int n() const
     {
         return _n;
     }
 
-    int min()
+    int min() const
     {
 		return _min;
 	}
 
-    int max()
+    int max() const
     {
         return _max;
     }
