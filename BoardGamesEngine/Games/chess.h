@@ -9,6 +9,7 @@
 #include <string_view>
 #include <utility>
 #include <iostream>
+#include <sstream>
 
 #include "..\core.h"
 
@@ -95,6 +96,13 @@ namespace chess {
             DCHECK(s[0] >= 'A' && s[0] <= 'H');
             DCHECK(s[1] >= '1' && s[1] <= '8');
         }
+
+		Square(std::string s) : Square(s[0] - 'a', s[1] - '1')
+		{
+			DCHECK(s.length() == 2);
+			DCHECK(s[0] >= 'a' && s[0] <= 'h');
+			DCHECK(s[1] >= '1' && s[1] <= '8');
+		}
 
         static std::experimental::generator<Square> all_squares()
         {
@@ -230,6 +238,77 @@ namespace chess {
     {
         friend class ConverterSimple<QPO>;
         bool _track_pgn = false;
+         
+        bool construct_from_pgn(std::string pgn)
+        {
+            std::stringstream ss(pgn);
+            int expected_number = 1;
+            do
+            {
+                // Get number
+                int number;
+                ss >> number;
+				if (number != expected_number++)
+					return false;
+
+                // Get dot after the number
+                char dot;
+				ss >> dot;
+				if (dot != '.')
+					return false;
+				if (ss.eof())
+					return false;
+
+                // Get white move
+                std::string wmove;
+                ss >> wmove;
+                Move move = this->pgn_to_move(wmove);
+				(*this) += move;
+                if (ss.eof())
+                    return false;
+
+                // Get black move
+                std::string bmove;
+                ss >> bmove;
+                move = this->pgn_to_move(bmove);
+                (*this) += move;
+            } while (!ss.eof());
+            return false;
+        }
+
+        bool construct_from_fen(std::string fen)
+        {
+            Square sq(0);
+            for (char c : fen)
+            {
+                if (c == '/')
+                    continue;
+
+                if (c >= '1' && c <= '8')
+                {
+                    int count = c - '0';
+                    for (int i = 0; i < count; i++)
+                    {
+                        table[sq] = Piece::None;
+                        ++sq;
+                    }
+                    continue;
+                }
+                char upper_c = toupper(c);
+                Piece piece = char_to_piece(upper_c);
+                if (upper_c != c)
+                    piece = other(piece);
+
+                if (c == 'K') King1 = sq;
+                if (c == 'k') King2 = sq;
+
+                table[sq] = piece;
+                ++sq;
+            }
+            this->flip_rows();
+			return true;
+        }
+
     public:
 
         ChessPosition(bool only_kings = false)
@@ -275,36 +354,13 @@ namespace chess {
         }
 
 #pragma region FEN
-        ChessPosition(std::string FEN)
+        ChessPosition(const std::string& png_or_fen) : ChessPosition(false)
         {
-            Square sq(0);
-            for (char c : FEN)
-            {
-                if (c == '/')
-                    continue;
-
-                if (c >= '1' && c <= '8')
-                {
-                    int count = c - '0';
-                    for (int i = 0; i < count; i++)
-                    {
-                        table[sq] = Piece::None;
-                        ++sq;
-                    }
-                    continue;
-                }
-                char upper_c = toupper(c);
-                Piece piece = char_to_piece(upper_c);
-                if (upper_c != c)
-                    piece = other(piece);
-
-                if (c == 'K') King1 = sq;
-                if (c == 'k') King2 = sq;
-            
-                table[sq] = piece;
-                ++sq;
-            }
-            this->flip_rows();
+            // If it is a FEN it has exactly 7 slashes
+            if (std::count(png_or_fen.begin(), png_or_fen.end(), '/') == 7)
+                construct_from_fen(png_or_fen);
+            else
+                construct_from_pgn(png_or_fen);
         }
 
         std::string fen()
@@ -556,6 +612,116 @@ return true;                                    \
                 return "";
             }
             };
+        }
+
+        Move pgn_to_move(std::string str)
+        {
+            if (str == "O-O" && turn() == Player::First)
+            {
+                return Move(King1, S("G1"));
+            }
+            if (str == "O-O-O" && turn() == Player::First)
+            {
+                return Move(King1, S("C1"));
+            }
+            if (str == "O-O" && turn() == Player::Second)
+            {
+                return Move(King2, S("G8"));
+            }
+            if (str == "O-O-O" && turn() == Player::Second)
+            {
+                return Move(King2, S("C8"));
+            }
+            if (str.length() == 2)
+            {
+                Square sq(str), sq_from = sq;
+                if (turn() == Player::First)
+                {
+                    sq_from.move_down();
+					if (this->operator[](sq_from) != Piece::Pawn)
+                        sq_from.move_down();
+                    DCHECK(this->operator[](sq_from) == Piece::Pawn);
+                }
+                else
+                {
+                    sq_from.move_up();
+                    if (this->operator[](sq_from) != Piece::OtherPawn)
+                        sq_from.move_up();
+                    DCHECK(this->operator[](sq_from) == Piece::OtherPawn);
+                }
+
+            	return Move(sq_from, sq);
+            }
+            if (str.length() == 3)
+            {
+#define CHECKDIRECTION(MOVE) sq = sq_to; while (sq.MOVE()) { if ((*this)[sq] == piece) return Move(sq, sq_to); }
+
+				Square sq_to(str.substr(1));
+                switch (str[0])
+                {
+				    case 'Q':
+                    {
+						Piece piece = turn() == Player::First ? Piece::Queen : Piece::OtherQueen;
+                        Square sq;
+                        CHECKDIRECTION(move_up);
+                        CHECKDIRECTION(move_down);
+                        CHECKDIRECTION(move_left);
+                        CHECKDIRECTION(move_right);
+
+                        CHECKDIRECTION(move_upleft);
+                        CHECKDIRECTION(move_upright);
+                        CHECKDIRECTION(move_downleft);
+                        CHECKDIRECTION(move_downright);
+                        DCHECK_FAIL;
+                    }
+                    case 'R':
+                    {
+                        Piece piece = turn() == Player::First ? Piece::Rook : Piece::OtherRook;
+                        Square sq;
+                        CHECKDIRECTION(move_up);
+                        CHECKDIRECTION(move_down);
+                        CHECKDIRECTION(move_left);
+                        CHECKDIRECTION(move_right);
+                        DCHECK_FAIL;
+                    }
+                    case 'B':
+                    {
+                        Piece piece = turn() == Player::First ? Piece::Bishop : Piece::OtherBishop;
+                        Square sq;
+                        CHECKDIRECTION(move_upleft);
+                        CHECKDIRECTION(move_upright);
+                        CHECKDIRECTION(move_downleft);
+                        CHECKDIRECTION(move_downright);
+                        DCHECK_FAIL;
+                    }
+
+#define CHECKMOVE(MOVE) sq = sq_to; if (sq.MOVE()) { if ((*this)[sq] == piece) return Move(sq, sq_to); }
+
+                    case 'N':
+                    {
+						Piece piece = turn() == Player::First ? Piece::Knight : Piece::OtherKnight;
+                        Square sq;
+						CHECKMOVE(move_knight1);
+                        CHECKMOVE(move_knight2);
+                        CHECKMOVE(move_knight3);
+                        CHECKMOVE(move_knight4);
+                        CHECKMOVE(move_knight5);
+                        CHECKMOVE(move_knight6);
+                        CHECKMOVE(move_knight7);
+                        CHECKMOVE(move_knight8);
+                        DCHECK_FAIL;
+                    }
+                }
+
+                DCHECK_FAIL;
+            }
+            //TODO: 4 and more characters
+            if (str.length() == 4)
+            {
+                DCHECK_FAIL;
+            }
+            DCHECK_FAIL;
+            return Move();
         }
 #pragma endregion
         
