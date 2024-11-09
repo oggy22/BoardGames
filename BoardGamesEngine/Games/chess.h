@@ -22,6 +22,40 @@ namespace chess {
         OtherKing = -1, OtherQueen = -2, OtherRook = -3, OtherBishop = -4, OtherKnight = -5, OtherPawn = -6
     };
 
+#pragma region Material
+    const int QUEEN_VALUE = 9;
+
+    constexpr inline int piece_to_value(Piece piece)
+    {
+        switch (piece)
+        {
+        case Piece::None: return 0;
+        case Piece::King: return 0;
+        case Piece::Queen: return QUEEN_VALUE;
+        case Piece::Rook: return 5;
+        case Piece::Bishop: return 3;
+        case Piece::Knight: return 3;
+        case Piece::Pawn: return 1;
+        case Piece::OtherKing: return 0;
+        case Piece::OtherQueen: return -QUEEN_VALUE;
+        case Piece::OtherRook: return -5;
+        case Piece::OtherBishop: return -3;
+        case Piece::OtherKnight: return -3;
+        case Piece::OtherPawn: return -1;
+        default: DCHECK_FAIL;
+        }
+    }
+
+    static int decrease_value(int value)
+    {
+        if (value > 0)
+            return value-1;
+        if (value < 0)
+			return value+1;
+        DCHECK_FAIL;
+    }
+#pragma endregion
+
     static Piece other(Piece piece)
     {
         return Piece(0 - int8_t(piece));
@@ -221,6 +255,15 @@ namespace chess {
             return ret;
         }
 
+        int material_change()
+        {
+            int ret = 0;
+            ret -= piece_to_value(_captured);
+            if (_promotion != Piece::None)
+                ret += decrease_value(piece_to_value(_promotion));
+            return ret;
+        }
+
     private:
         Square _from, _to;
         Piece _captured;
@@ -238,7 +281,7 @@ namespace chess {
     {
         friend class ConverterSimple<QPO>;
         bool _track_pgn = false;
-         
+
         bool construct_from_pgn(std::string pgn)
         {
             std::stringstream ss(pgn);
@@ -248,22 +291,22 @@ namespace chess {
                 // Get number
                 int number;
                 ss >> number;
-				if (number != expected_number++)
-					return false;
+                if (number != expected_number++)
+                    return false;
 
                 // Get dot after the number
                 char dot;
-				ss >> dot;
-				if (dot != '.')
-					return false;
-				if (ss.eof())
-					return false;
+                ss >> dot;
+                if (dot != '.')
+                    return false;
+                if (ss.eof())
+                    return false;
 
                 // Get white move
                 std::string wmove;
                 ss >> wmove;
                 Move move = this->pgn_to_move(wmove);
-				(*this) += move;
+                (*this) += move;
                 if (ss.eof())
                     return false;
 
@@ -306,7 +349,7 @@ namespace chess {
                 ++sq;
             }
             this->flip_rows();
-			return true;
+            return true;
         }
 
     public:
@@ -345,7 +388,7 @@ namespace chess {
                 table[BottomRight] = pieces[i];
                 table[TopLeft] = other(pieces[i]);
                 table[TopRight] = other(pieces[i]);
-                
+
                 // Move squares
                 BottomLeft.move_right(); BottomRight.move_left();
                 TopLeft.move_right(); TopRight.move_left();
@@ -387,12 +430,52 @@ namespace chess {
                     fen += '/';
             } while (++sq);
             nonConstThis->flip_rows();
-            
-            return fen.substr(0, fen.length()-1);
+
+            return fen.substr(0, fen.length() - 1);
         }
 #pragma endregion
 
         int32_t Evaluate() const { return 0; }
+
+#pragma region Material
+        int get_material_full() const
+        {
+            int ret = 0;
+            for (int i = 0; i < 64; i++)
+            {
+                Piece piece = table[i];
+                ret += piece_to_value(piece);
+            }
+			return ret;
+        }
+
+        int get_material() const
+		{
+            if (track_material_on)
+                return tracked_material;
+
+			return get_material_full();
+		}
+
+        bool track_material_on = false;
+		
+		void turn_on_material_tracking()
+		{
+			if (track_material_on)
+				return;
+
+            track_material_on = true;
+			tracked_material = get_material_full();
+        }
+
+        void turn_off_material_tracking()
+        {
+			track_material_on = false;
+        }
+
+        int tracked_material = 0;
+#pragma endregion
+
 
         bool play_if_legal(Move move)
         {
@@ -803,6 +886,8 @@ return true;                                    \
                 King2 = move.to();
             }
             BoardBase::move();
+            if (track_material_on)
+                tracked_material += move.material_change();
         }
 
         void operator-=(Move move)
@@ -832,6 +917,8 @@ return true;                                    \
                 : (belongs_to(move.promotion(), Player::First) ? Piece::Pawn : Piece::OtherPawn);
             square(move.to()) = move.captured();
             BoardBase::reverse_move();
+            if (track_material_on)
+                tracked_material -= move.material_change();
         }
 #pragma endregion
 

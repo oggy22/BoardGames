@@ -383,3 +383,23 @@ TEST(chess, random_games) {
 
 	print_stats(all_stats, total, "Total");
 }
+
+TEST(chess, material)
+{
+	for (int seed = 0; seed < 10; seed++)
+	{
+		chess::ChessPosition<true> pos;
+		pos.turn_on_material_tracking();
+		size_t number_of_moves;
+		for (int i = 0; i < 1000; i++)
+		{
+			chess::Move move = random_move<chess::ChessPosition<true>, chess::Move>(pos, seed, number_of_moves);
+			if (!move.is_valid())
+				break;
+			pos += move;
+			int material = pos.get_material();
+			int material_full = pos.get_material_full();
+			EXPECT_EQ(material, material_full) << " ply:" << i << " move:" << move.chess_notation();
+		}
+	}
+}
