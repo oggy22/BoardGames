@@ -66,6 +66,13 @@ namespace chess {
         return int8_t(piece) > 0 ? piece : other(piece);
     }
 
+    static Player sgn(Piece piece)
+    {
+        if (int8_t(piece) > 0) return Player::First;
+        if (int8_t(piece) < 0) return Player::Second;
+        return Player(0);
+    }
+
     static bool belongs_to(Piece piece, Player player)
     {
         return player == Player::First ? (int8_t(piece) > 0) : (int8_t(piece) < 0);
@@ -476,6 +483,47 @@ namespace chess {
         int tracked_material = 0;
 #pragma endregion
 
+        // Increments for each white piece and
+        // decrements for each black piece.
+        int king_protection_eval(Square king)
+        {
+            int ret = 0;
+            int minx = std::max(0, king.x() - 1);
+            int maxx = std::min(7, king.x() + 1);
+            int miny = std::max(0, king.y() - 1);
+            int maxy = std::min(7, king.y() + 1);
+            for (int x = minx; x<=maxx; x++)
+                for (int y = miny; y <= maxy; y++)
+                {
+                    Piece piece = table[Square(x, y)];
+                    ret += sgn(piece);
+                }
+            return ret;
+        }
+
+        int king_protection_eval()
+        {
+            return king_protection_eval(this->King1)
+                + king_protection_eval(this->King2);
+        }
+
+        template <
+            int material = 1, //Qs*9+Rs*5+Bs*3+Ks*3+Ps*1
+            //int almost_promoted = 0, // white pawns on 7th rank - black pawns on 2nd rank
+            int king_protection = 0, // count pieces around the king
+            //int coverage = 0, // count squares controlled by white - black
+            int legal_moves = 0 // number of legal moves
+        >
+        int evaluate()
+        {
+            int ret = 0;
+            if constexpr (material > 0) ret += material * get_material();
+            //if const (almost_promoted)ret += almost_promoted * almost_promoted_evaluate();
+            if constexpr (king_protection)ret += king_protection * king_protection_eval();
+            //if const (coverage)ret += coverage * coverage_evaluate();
+            if constexpr (legal_moves > 0) ret += legal_moves * count_all_legal_moves() * turn();
+            return ret;
+        }
 
         bool play_if_legal(Move move)
         {
@@ -602,7 +650,18 @@ return true;                                    \
             switch (abs(piece))
             {
             //King = 1, Queen = 2, Rook = 3, Bishop = 4, Knight = 5, Pawn = 6,
-            case Piece::King: return "K" + move.to().chess_notation(true);
+            case Piece::King:
+            {
+                if (move.to().king_distance(move.from()) == 2)
+                {
+                    if (move.to().x() == 2) // "C1" or "C8"
+                        return "O-O-O";
+                    if (move.to().x() == 6) // "G1" or "G8"
+                        return "O-O";
+                    DCHECK_FAIL;
+                }
+                return "K" + move.to().chess_notation(true);
+            }
             case Piece::Queen:
             {
                 bool x_diff = true, y_diff = true;
@@ -1168,6 +1227,16 @@ if (sq2.MOVE() && !belongs_to(square(sq2), player) && CONDITION)      \
                 (*nonConstThis) -= move;
                 co_yield move;
             }
+        }
+
+        int count_all_legal_moves() const
+        {
+            int count = 0;
+            for (auto m : all_legal_moves())
+            {
+                count++;
+            }
+            return count;
         }
 
 		bool any_legal_moves() const

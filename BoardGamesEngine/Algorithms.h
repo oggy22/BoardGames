@@ -1,4 +1,5 @@
 #pragma once
+#include <functional>
 #include "core.h"
 
 class EvalValue
@@ -69,12 +70,19 @@ class MinMax
 {
 public:
 	static_assert(ko != KillerOptions::Multiple, "KillerOptions::Multiple not implemented");
-	static Move FindBestMove(const Pos& position, int depth)
+	static Move FindBestMove(
+		const Pos& position,
+		int depth,
+		std::function<EvalValue::payload_t(Pos& position)> eval_func = [](Pos& position) -> EvalValue::payload_t
+		{
+			return 0;
+		})
 	{
 		// depth is an even number greater than zero
 		DCHECK(depth % 2 == 0 && depth > 0);
 
 		MinMax minmax(position, depth);
+		minmax.eval_func = eval_func;
 		if (position.turn() == Player::First)
 			return minmax.Find<Player::First>(0, depth).move;
 		else
@@ -120,13 +128,15 @@ private:
 		}
 	}
 
+	std::function<EvalValue::payload_t(Pos& position)> eval_func;
+
 	template <Player player1>
 	MoveVal Find(int curr_depth, int max_depth, EvalValue cut = EvalValue::Win<player1>())
 	{
 		constexpr Player player2 = oponent(player1);
 		DCHECK(position.turn() == player1);
 		if (curr_depth == max_depth)
-			return { Move(), (EvalValue::payload_t)(position.Evaluate()) };
+			return { Move(), eval_func(position) };
 
 		MoveVal best { Move(), EvalValue::Lose<player1>() };
 		for (auto move1 : all_legal_moves_played_and_killer(curr_depth))

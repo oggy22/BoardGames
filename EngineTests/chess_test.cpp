@@ -195,12 +195,13 @@ TEST(chess, square_knight_moves)
 }
 
 TEST(chess, minmax_vs_random) {
-	for (int round = 1; round <= DebugRelease(4, 2); round++)
+	for (int round = 1; round <= DebugRelease(4, 4); round++)
 	{
 		chess::ChessPosition<true> pos;
+		pos.turn_on_material_tracking();
 		pos.track_pgn();
 		
-		for (int ply = 0; ply < DebugRelease(100, 50); ply++)
+		while (true)
 		{
 			// round1: White=minmax, Black=random
 			// round2: White=random, Black=minmax
@@ -209,12 +210,17 @@ TEST(chess, minmax_vs_random) {
 			bool random = (round + pos.ply()) % 2 == 0;
 			chess::Move move = random ?
 				random_move<chess::ChessPosition<true>, chess::Move>(pos, 0) :
-				MinMax<chess::ChessPosition<true>, chess::Move>::FindBestMove(pos, DebugRelease(2, 4));
+				MinMax<chess::ChessPosition<true>, chess::Move>::FindBestMove(
+					pos,
+					DebugRelease(2, 4),
+                    [](chess::ChessPosition<true>& pos) -> int { return pos.evaluate<1>(); });
 
 			if (!move.is_valid())
 			{
 				EXPECT_TRUE(random) << "round:" << round << " game:" << pos.pgn() << std::endl;
 				EXPECT_TRUE(pos.is_checked(pos.turn())) << pos.pgn() << std::endl;
+
+				GTEST_LOG_(INFO) << pos.pgn() << std::endl;
 				break;
 			}
 
