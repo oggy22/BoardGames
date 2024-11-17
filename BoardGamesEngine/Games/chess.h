@@ -82,7 +82,6 @@ namespace chess {
     {
         switch (piece)
         {
-        case Piece::None: return ' ';
 
         case Piece::King: return 'K';
         case Piece::Queen: return 'Q';
