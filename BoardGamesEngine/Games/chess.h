@@ -526,39 +526,19 @@ namespace chess {
         }
 
         bool play_if_legal(Move move)
-        {
-            for (auto m : all_legal_moves_played())
-            {
-                if (m == move)
-                {
-                    return true;
-                }
-                (*this) -= m;
-            }
-            return false;
-        }
-
-        bool play_if_legal2(Move move)
-        {
+        {            
+			if (sgn(table[move.from()]) != this->turn())
+				return false;
+            //TODO: if moving king, check distance to to from
             if (move.captured() != table[move.to()])
                 return false;
-            (*this) += move;
-            if (!is_checked(turn()))
-                return true;
 
-            // If still checked revert the move and return false
-            (*this) -= move;
-            return false;
-        }
-
-        bool play_if_legal3(Move move)
-        {
-            if (move.captured() != table[move.to()])
-                return false;
-            (*this) += move;
-            if (!is_checked(turn()))
-                return true;
+            //TODO: check if move.from to move.to is clear?
             
+            (*this) += move;
+            if (King1.king_distance(King2) >= 2 && !is_checked(oponent(turn())))
+                return true;
+
             // If still checked revert the move and return false
             (*this) -= move;
             return false;

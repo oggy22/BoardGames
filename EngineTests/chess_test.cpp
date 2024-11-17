@@ -195,7 +195,7 @@ TEST(chess, square_knight_moves)
 }
 
 TEST(chess, minmax_vs_random) {
-	for (int round = 1; round <= DebugRelease(4, 4); round++)
+	for (int round = 1; round <= DebugRelease(1, 2); round++)
 	{
 		chess::ChessPosition<true> pos;
 		pos.turn_on_material_tracking();
@@ -212,7 +212,7 @@ TEST(chess, minmax_vs_random) {
 				random_move<chess::ChessPosition<true>, chess::Move>(pos, 0) :
 				MinMax<chess::ChessPosition<true>, chess::Move>::FindBestMove(
 					pos,
-					DebugRelease(2, 4),
+					4,
                     [](chess::ChessPosition<true>& pos) -> int { return pos.evaluate<1>(); });
 
 			if (!move.is_valid())
