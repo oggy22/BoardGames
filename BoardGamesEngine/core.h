@@ -189,6 +189,8 @@ protected:
     }
 
 public:
+    consteval static bool implements_hash() { return false; }
+
     piece_t operator[](const SquareBase<W, H> sq) const
     {
         return table[int(sq)];

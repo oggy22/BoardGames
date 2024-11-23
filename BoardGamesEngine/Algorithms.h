@@ -53,6 +53,11 @@ public:
 		if constexpr (player == Player::Second)
 			return value < other.value;
 	}
+
+	//EvalValue& operator=(const EvalValue&) = default;
+
+	EvalValue() {}
+
 private:
 	payload_t value;
 };
@@ -83,10 +88,14 @@ public:
 
 		MinMax minmax(position, depth);
 		minmax.eval_func = eval_func;
+		minmax.transposition_table.resize(depth + 1);
+
+		Move move;
 		if (position.turn() == Player::First)
-			return minmax.Find<Player::First>(0, depth).move;
+			move = minmax.Find<Player::First>(0, depth).move;
 		else
-			return minmax.Find<Player::Second>(0, depth).move;
+			move = minmax.Find<Player::Second>(0, depth).move;
+		return move;
 	}
 
 	std::vector<Move> killer;
@@ -129,6 +138,8 @@ private:
 	}
 
 	std::function<EvalValue::payload_t(Pos& position)> eval_func;
+	
+	std::vector<std::unordered_map<uint64_t, MoveVal>> transposition_table;
 
 	template <Player player1>
 	MoveVal Find(int curr_depth, int max_depth, EvalValue cut = EvalValue::Win<player1>())
@@ -137,6 +148,17 @@ private:
 		DCHECK(position.turn() == player1);
 		if (curr_depth == max_depth)
 			return { Move(), eval_func(position) };
+		
+		uint64_t hash;
+		if constexpr (Pos::implements_hash())
+		{
+			hash = position.get_hash();
+			auto it = transposition_table[curr_depth].find(hash);
+			if (it != transposition_table[curr_depth].end())
+			{
+				return it->second;
+			}
+		}
 
 		MoveVal best { Move(), EvalValue::Lose<player1>() };
 		for (auto move1 : all_legal_moves_played_and_killer(curr_depth))
@@ -185,6 +207,10 @@ private:
 				: 0;
 		}
 
+		if constexpr (Pos::implements_hash())
+		{
+			transposition_table[curr_depth][hash] = best;
+		}
 		return best;
 	}
 };

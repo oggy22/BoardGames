@@ -259,6 +259,9 @@ public:
 
 	bool play_if_legal(Move<W, H> move)
 	{
+		if (!move.is_valid())
+			return false;
+
 		if (this->square(move.square) != Field::Empty)
 			return false;
 
