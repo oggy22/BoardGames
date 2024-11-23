@@ -409,3 +409,33 @@ TEST(chess, material)
 		}
 	}
 }
+
+TEST(chess, hash)
+{
+	chess::ChessPosition<true> pos;
+	
+	std::unordered_map<uint64_t, chess::ChessPosition<true>> hash_positions;
+	for (int seed = 0; seed < 10; seed++)
+	{
+		chess::ChessPosition<true> pos;
+		size_t number_of_moves;
+		for (int i = 0; i < 1000; i++)
+		{
+			chess::Move move = random_move<chess::ChessPosition<true>, chess::Move>(pos, seed, number_of_moves);
+			if (!move.is_valid())
+				break;
+			pos += move;
+
+			auto hash = pos.get_hash<false> ();
+			if (hash_positions.contains(hash))
+			{
+				auto pos2 = hash_positions[hash];
+				EXPECT_EQ(pos.fen(), pos2.fen(), "These two have same hash:" + pos.fen() + " and " + pos2.fen());
+			}
+			else
+			{
+				hash_positions[hash] = pos;
+			}
+		}
+	}
+}

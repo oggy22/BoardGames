@@ -381,11 +381,9 @@ namespace chess {
                     break;
             }
 
-
             Square BottomLeft("A1"), BottomRight("H1");
             Square TopLeft("A8"), TopRight("H8");
             Piece pieces[3] = { Piece::Rook, Piece::Knight, Piece::Bishop };
-
 
             for (int i = 0; i < 3; i++)
             {
@@ -399,6 +397,8 @@ namespace chess {
                 BottomLeft.move_right(); BottomRight.move_left();
                 TopLeft.move_right(); TopRight.move_left();
             }
+            
+            initialize_transpositional_tables();
         }
 
 #pragma region FEN
@@ -1415,6 +1415,56 @@ if (sq.MOVE() && abs(square(sq)) == PIECE && belongs_to(square(sq), player))    
             } while (row.move_down());
             return os;
         }
+
+#pragma region Transpositional tables
+        inline static uint64_t hash_white[64][6], hash_black[64][6], hash_turn;
+
+        inline static bool transpositional_tables_initialized = false;
+        static void initialize_transpositional_tables()
+        {
+			if (transpositional_tables_initialized)
+				return;
+            std::mt19937 gen(0);
+            std::uniform_int_distribution<uint64_t> dist(
+                std::numeric_limits<uint64_t>::min(),
+                std::numeric_limits<uint64_t>::max());
+
+            for (int i = 0; i < 64; i++)
+                for (int j = 0; j < 6; j++)
+                {
+                    hash_white[i][j] = dist(gen);
+                    hash_black[i][j] = dist(gen);
+                }
+			hash_turn = dist(gen);
+			transpositional_tables_initialized = true;
+        }
+
+        consteval static bool implements_hash() { return true; }
+
+		template <bool include_turn = false>
+        uint64_t get_hash()
+        {
+            uint64_t ret = 0;
+            for (int i = 0; i < 64; i++)
+            {
+				auto piece = table[i];
+				if (piece == Piece::None)
+					continue;
+				if (belongs_to(piece, Player::First))
+					ret ^= hash_white[i][int8_t(abs(piece))];
+				else
+					ret ^= hash_black[i][int8_t(abs(piece))];
+            }
+
+			if constexpr (include_turn)
+			{
+				if (turn() == Player::Second)
+					ret ^= hash_turn;
+			}
+
+            return ret;
+        }
+#pragma endregion
     private:
         Square King1, King2;
     };
