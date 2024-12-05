@@ -58,6 +58,12 @@ public:
         DCHECK(0 <= x && x < W);
         DCHECK(0 <= y && y < H);
     }
+    constexpr SquareBase(const char s[3]) : SquareBase(s[0] - 'A', s[1] - '1')
+    {
+        static_assert(W <= 26 && H < 10);
+		DCHECK(s[0] >= 'A' && s[0] < 'A' + W);
+		DCHECK(s[1] >= '1' && s[1] < '1' + H);
+    }
 
     bool operator==(const SquareBase& sq) const = default;
 

@@ -1,6 +1,10 @@
 #pragma once
 #include <functional>
 #include "core.h"
+#include "KillerMoves.h"
+
+// Uncomment to enable statistics
+//#define STATS
 
 class EvalValue
 {
@@ -62,19 +66,29 @@ private:
 	payload_t value;
 };
 
-enum class KillerOptions
-{
-	None = 0,
-	Single = 1,
-	Multiple = 2
-};
-
-template <typename Pos, typename Move, KillerOptions ko = KillerOptions::Single>
+template <typename Pos, typename Move, KillerOptions ko = KillerOptions::Multiple>
 requires BoardPosition<Pos, Move>
 class MinMax
 {
+#ifdef STATS
+	class Stats
+	{
+	public:
+		Stats()
+		{
+
+		}
+		int killer_moves = 0;
+		int killer_hits = 0;
+		int killer_misses = 0;
+
+		int transposition_hits = 0;
+		int transposition_misses = 0;
+	};
+	inline static std::vector<Stats> stats;
+#endif
+
 public:
-	static_assert(ko != KillerOptions::Multiple, "KillerOptions::Multiple not implemented");
 	static Move FindBestMove(
 		const Pos& position,
 		int depth,
@@ -90,17 +104,39 @@ public:
 		minmax.eval_func = eval_func;
 		minmax.transposition_table.resize(depth + 1);
 
+#ifdef STATS
+		stats.resize(depth + 1);
+#endif
+
 		Move move;
 		if (position.turn() == Player::First)
 			move = minmax.Find<Player::First>(0, depth).move;
 		else
 			move = minmax.Find<Player::Second>(0, depth).move;
+#ifdef STATS
+		for (int i = 0; i <= depth; i++)
+		{
+			auto& s = stats[i];
+			int killer_size = minmax.killer_manager.size(i);
+			GTEST_LOG_(INFO) << "Depth " << i << ":\n"
+				<< "Killer moves: " << killer_size << "\n"
+				<< "Killer hits: " << s.killer_hits << "\n"
+				<< "Killer misses: " << minmax.killer_manager.size(i) << "\n"
+				<< "Transposition hits: " << s.transposition_hits << "\n"
+				<< "Transposition misses: " << s.transposition_misses << "\n"
+				<< "Transposition size: " << minmax.transposition_table[i].size() << "\n";
+		}
+		stats.resize(depth + 1);
+#endif
 		return move;
 	}
 
-	std::vector<Move> killer;
 	Pos position;
-	MinMax(const Pos& position, int depth) : killer(depth+1, Move()), position(position) {}
+	KillerMoveManager<ko, Move> killer_manager;
+	MinMax(const Pos& position, int depth) :
+		position(position),
+		killer_manager(depth + 1)
+	{}
 
 	struct MoveVal
 	{
@@ -111,13 +147,24 @@ public:
 private:
 	std::experimental::generator<Move> all_legal_moves_played_and_killer(int depth)
 	{
-		if constexpr (ko == KillerOptions::Single)
+		if constexpr (ko != KillerOptions::None)
 		{
 			Player turn = position.turn();
-			if (position.play_if_legal(killer[depth]))
+			for (Move move : killer_manager.all_killers(depth))
 			{
-				DCHECK(position.turn() != turn);
-				co_yield killer[depth];
+				if (position.play_if_legal(move))
+				{
+					DCHECK(position.turn() != turn);
+					co_yield move;
+#ifdef STATS
+					stats[depth].killer_hits++;
+
+				}
+				else
+				{
+					stats[depth].killer_misses++;
+#endif
+				}
 			}
 		}
 
@@ -127,9 +174,9 @@ private:
 			{
 				co_yield move;
 			}
-			else if constexpr (ko == KillerOptions::Single)
+			else
 			{
-				if (move != killer[depth])
+				if (!killer_manager.is_killer(move, depth))
 					co_yield move;
 				else
 					position -= move;
@@ -152,11 +199,23 @@ private:
 		uint64_t hash;
 		if constexpr (Pos::implements_hash())
 		{
-			hash = position.get_hash();
-			auto it = transposition_table[curr_depth].find(hash);
-			if (it != transposition_table[curr_depth].end())
+			if (curr_depth >= 3)
 			{
-				return it->second;
+				hash = position.get_hash();
+				auto it = transposition_table[curr_depth].find(hash);
+				if (it != transposition_table[curr_depth].end())
+				{
+#ifdef STATS
+					stats[curr_depth].transposition_hits++;
+#endif // STATS
+					return it->second;
+				}
+				else
+				{
+#ifdef STATS
+					stats[curr_depth].transposition_misses++;
+#endif // STATS
+				}
 			}
 		}
 
@@ -182,12 +241,6 @@ private:
 			MoveVal best2 = Find<player2>(curr_depth + 1, max_depth, best.val);
 			// Help prefer quicker mates
   			best2.val.weaken_ending_position();
-			if constexpr (ko == KillerOptions::Single)
-			{
-				// Update killer move for the next depth
-				if (!killer[curr_depth + 1].is_valid()) // todo: if not legal as well
-					killer[curr_depth + 1] = best2.move;
-			}
 			position -= move1;
 
 			// Update the best if the search returned better value for player1
@@ -206,6 +259,8 @@ private:
 				? EvalValue::Lose<player1>()
 				: 0;
 		}
+
+		killer_manager.update(best.move, curr_depth);
 
 		if constexpr (Pos::implements_hash())
 		{

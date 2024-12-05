@@ -175,6 +175,7 @@
     <ClInclude Include="Games\MNK.h" />
     <ClInclude Include="Games\MNKGeneralized.h" />
     <ClInclude Include="Games\TicTacToe.h" />
+    <ClInclude Include="KillerMoves.h" />
     <ClInclude Include="MNKGeneralized.h" />
   </ItemGroup>
   <ItemGroup>

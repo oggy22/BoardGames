@@ -47,6 +47,15 @@ struct Move
 	auto operator<=>(const Move&) const = default;
 };
 
+
+namespace std {
+	template <int W, int H>
+	struct hash<Move<W,H>> {
+		std::size_t operator()(const Move<W,H>& move) const noexcept {
+			return int(move.square);
+		}
+	};
+}
 template <
 	int W, DimProp dpw,	// width of the board and width properties
 	int H, DimProp dph,	// height of the board and height properties
@@ -582,5 +591,3 @@ inline std::ostream& operator<<(std::ostream& os, const MNKGeneralized<W, dpw, H
 	}	
 	return os;
 }
-
-

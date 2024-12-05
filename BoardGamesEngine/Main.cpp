@@ -39,8 +39,8 @@ void Print() //requires Converter<T>
 
 int main()
 {
-    std::map<chess::Piece, std::map <chess::Piece, int>> map;
-    map[chess::Piece::Knight][chess::Piece::Queen] = 5;
+    //std::map<chess::Piece, std::map <chess::Piece, int>> map;
+    //map[chess::Piece::Knight][chess::Piece::Queen] = 5;
 
     for (int n = 0; n < 6; n++)
         for (int k = 0; k <= n; k++)

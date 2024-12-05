@@ -131,11 +131,7 @@ namespace chess {
         constexpr Square(int n) : SquareBase(n) { }
         constexpr Square(int x, int y) : SquareBase(y * 8 + x) {}
         constexpr Square(char letter, char number) : SquareBase(int(letter -'A'), int(number - '1')) { }
-        constexpr Square(const char s[3]) : Square(s[0] - 'A', s[1] - '1')
-        {
-            DCHECK(s[0] >= 'A' && s[0] <= 'H');
-            DCHECK(s[1] >= '1' && s[1] <= '8');
-        }
+        constexpr Square(const char s[3]) : SquareBase(s) { }
 
 		Square(std::string s) : Square(s[0] - 'a', s[1] - '1')
 		{
@@ -1649,5 +1645,17 @@ if (sq.MOVE() && abs(square(sq)) == PIECE && belongs_to(square(sq), player))    
         static std::tuple<std::string, SIZE> PositionToTable(const ChessPosition<QPO>&);
         template <bool QPO>
         static ChessPosition<QPO> TableToPosition(const std::string& type, SIZE index);
+    };
+}
+
+namespace std {
+    template <>
+    struct hash<chess::Move> {
+        std::size_t operator()(const chess::Move& move) const noexcept {
+            std::size_t h1 = std::hash<int>{}(move.from());
+            std::size_t h2 = std::hash<int>{}(move.to());
+            //TODO: might need to combine other move elements
+            return h1 ^ (h2 << 1); // Combine the hashes
+        }
     };
 }

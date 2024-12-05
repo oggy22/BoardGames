@@ -430,7 +430,7 @@ TEST(chess, hash)
 			if (hash_positions.contains(hash))
 			{
 				auto pos2 = hash_positions[hash];
-				EXPECT_EQ(pos.fen(), pos2.fen(), "These two have same hash:" + pos.fen() + " and " + pos2.fen());
+				EXPECT_EQ(pos.fen(), pos2.fen()) << "These two have same hash:" << pos.fen() << " and " << pos2.fen();
 			}
 			else
 			{

@@ -42,16 +42,18 @@ TEST(Connect4_test, play_20_moves)
 
 TEST(Connect4_test, FourByThree)
 {
+#define S(str) SquareBase<4, 3>(str)
+
 	std::vector<Move<4, 3>> moves = {
-		Move<4, 3>(SquareBase<4, 3>(1, 0), Field::X),
-		Move<4, 3>(SquareBase<4, 3>(2, 0), Field::O),
-		Move<4, 3>(SquareBase<4, 3>(1, 1), Field::X),
-		Move<4, 3>(SquareBase<4, 3>(1, 2), Field::O),
-		Move<4, 3>(SquareBase<4, 3>(2, 1), Field::X),
-		Move<4, 3>(SquareBase<4, 3>(2, 2), Field::O),
-		Move<4, 3>(SquareBase<4, 3>(3, 0), Field::X),
-		Move<4, 3>(SquareBase<4, 3>(0, 0), Field::O),
-		Move<4, 3>(SquareBase<4, 3>(0, 1), Field::X)
+		Move<4, 3>(S("C1"), Field::X),
+		Move<4, 3>(S("B1"), Field::O),
+		Move<4, 3>(S("B2"), Field::X),
+		Move<4, 3>(S("B3"), Field::O),
+		Move<4, 3>(S("C2"), Field::X),
+		Move<4, 3>(S("C3"), Field::O),
+		Move<4, 3>(S("A1"), Field::X),
+		Move<4, 3>(S("A2"), Field::O),
+		Move<4, 3>(S("A3"), Field::X),
 	};
 	MNKGravity<4, 3, 3> FourByThree;
 	for (int i = 0; i < moves.size(); i++)
