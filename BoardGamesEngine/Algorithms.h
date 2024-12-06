@@ -58,6 +58,16 @@ public:
 			return value < other.value;
 	}
 
+	template <Player player>
+	bool is_better_or_same(EvalValue other)
+	{
+		if constexpr (player == Player::First)
+			return value >= other.value;
+
+		if constexpr (player == Player::Second)
+			return value <= other.value;
+	}
+
 	//EvalValue& operator=(const EvalValue&) = default;
 
 	EvalValue() {}
@@ -247,8 +257,8 @@ private:
 			if (best2.val.is_better<player1>(best.val))
 				best = { move1, best2.val };
 
-			// Cut the search if better than the cut value
-			if (best.val.is_better<player1>(cut))
+			// Cut the search if better or same to the cut value
+			if (best.val.is_better_or_same<player1>(cut))
 				return best;
 		}
 
