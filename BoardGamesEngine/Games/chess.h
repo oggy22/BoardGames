@@ -869,7 +869,16 @@ return true;                                    \
             return false;
         }
         bool any_pawns() const;
-        bool is_legal(Move move) const { return square(move.to()) == move.captured(); }
+        bool is_legal(Move move) /*const*/
+        {
+            bool legal = this->play_if_legal(move);
+            if (!legal)
+                return false;
+
+            (*this) -= move;
+            return true;
+        }
+
         bool is_reverse_legal(Move move) const { return square(move.from()) == Piece::None && square(move.to()) != Piece::None; }
 
         Piece operator[](Square square) const { return table[square]; }

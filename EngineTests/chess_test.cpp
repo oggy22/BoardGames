@@ -248,6 +248,43 @@ TEST(chess, flip_board_test_initial)
 	EXPECT_EQ(pos, pos_copy);
 }
 
+TEST(chess, is_legal) {
+	stats total, wins, draws, white_wins, black_wins, in_mats, stalemates;
+
+	std::ofstream file_csv;
+	file_csv.open("all_games.csv");
+
+	std::unordered_set<chess::Move> all_moves;
+	for (int seed = 1; seed <= DebugRelease(20, 10); seed++)
+	{
+		chess::ChessPosition<true> pos;
+
+		for (int ply = 0; ply < 10; ply++)
+		{
+			// Get all legal moves
+			std::unordered_set<chess::Move> legal_moves;
+			for (auto move : pos.all_legal_moves())
+			{
+				legal_moves.insert(move);
+				all_moves.insert(move);
+			}
+
+			// Verify each move is_legal iff contained in legal_moves
+			for (auto move : all_moves)
+			{
+				if (legal_moves.contains(move))
+					EXPECT_TRUE(pos.is_legal(move));
+				else
+					EXPECT_FALSE(pos.is_legal(move));
+			}
+
+			size_t number_of_moves;
+			chess::Move move = random_move<chess::ChessPosition<true>, chess::Move>(pos, seed, number_of_moves);
+			pos += move;
+		}
+	}
+}
+
 TEST(chess, random_games) {
 	stats total, wins, draws, white_wins, black_wins, in_mats, stalemates;
 	
