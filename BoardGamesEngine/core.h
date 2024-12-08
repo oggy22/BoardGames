@@ -16,13 +16,13 @@ inline void failure()
 #define AT __FILE__ ":" TOSTRING(__LINE__)
 
 #ifdef _DEBUG
-#define DCHECK(assertion)           \
+#define DCHECK(expression)           \
 {                                   \
-    if (!(assertion))               \
+    if (!(expression))               \
         failure();                  \
 }
 #else
-#define DCHECK(assertion) __assume (assertion)
+#define DCHECK(expression) { auto _result = expression; __assume (_result); }
 #endif
 
 
@@ -43,6 +43,19 @@ Player constexpr oponent(Player player)
 {
     return Player(0 - int(player));
 }
+
+enum class Direction : uint8_t
+{
+    none = 0,
+    up = 1,
+    down = 2,
+    left = 4,
+    right = 8,
+    upleft = 16,
+    upright = 32,
+    downleft = 64,
+    downright = 128
+};
 
 template<int W, int H>
 class SquareBase
@@ -86,6 +99,58 @@ public:
     bool move_upright() { return move_up() && move_right(); }
     bool move_downleft() { return move_down() && move_left(); }
     bool move_downright() { return move_down() && move_right(); }
+
+    template <Direction dir>
+    bool move()
+    {
+        switch (dir)
+        {
+        case Direction::up: return move_up();
+        case Direction::down: return move_down();
+        case Direction::left: return move_left();
+        case Direction::right: return move_right();
+        case Direction::upleft: return move_upleft();
+        case Direction::upright: return move_upright();
+        case Direction::downleft: return move_downleft();
+        case Direction::downright: return move_downright();
+        default: DCHECK_FAIL;
+        }
+    }
+
+    bool move(Direction dir)
+    {
+        switch (dir)
+        {
+        case Direction::up: return move_up();
+        case Direction::down: return move_down();
+        case Direction::left: return move_left();
+        case Direction::right: return move_right();
+        case Direction::upleft: return move_upleft();
+        case Direction::upright: return move_upright();
+        case Direction::downleft: return move_downleft();
+        case Direction::downright: return move_downright();
+        default: DCHECK_FAIL;
+        }
+    }
+
+    Direction get_direction_to(SquareBase sq)
+    {
+        if (sq == *this)
+            return Direction::none;
+
+        int dx = sq.x() - x();
+        int dy = sq.y() - y();
+        if (dx == 0)
+            return dy > 0 ? Direction::up : Direction::down;
+        if (dy == 0)
+            return dx > 0 ? Direction::right : Direction::left;
+        if (dx == dy)
+            return dx > 0 ? Direction::upright : Direction::downleft;
+        if (dx == -dy)
+            return dx > 0 ? Direction::downright : Direction::upleft;
+
+        return Direction::none;
+    }
 
     SquareBase flip_horizontally() { return SquareBase(W-x()-1, y()); }
     SquareBase flip_vertifaclly() { return SquareBase(x(), H-y() - 1); }
@@ -436,10 +501,10 @@ concept BoardPosition = requires(T pos, const T const_pos, Q move, Player player
 {
     { const_pos.all_legal_moves() } -> std::convertible_to<std::experimental::generator<Q>>;
     { pos.all_legal_moves_played() } -> std::convertible_to<std::experimental::generator<Q>>;
-    { pos.easycheck_winning_move(move) } -> std::convertible_to<bool>;
-    { pos.turn() } -> std::convertible_to<Player>;
-    { pos.is_checked(player) } -> std::convertible_to<bool>;
-    { pos.Evaluate() } -> std::convertible_to<int>;
+    { const_pos.easycheck_winning_move(move) } -> std::convertible_to<bool>;
+    { const_pos.turn() } -> std::convertible_to<Player>;
+    { const_pos.is_checked(player) } -> std::convertible_to<bool>;
+    { const_pos.Evaluate() } -> std::convertible_to<int>;
     { pos += move } -> std::convertible_to<void>;
     { pos -= move } -> std::convertible_to<void>;
 };

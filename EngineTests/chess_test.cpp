@@ -92,9 +92,9 @@ TEST(chess, castle) {
 	{
 		EXPECT_EQ(pos, copy)
 			<< "Last move: " << move.chess_notation() << std::endl;
-		if (move == chess::Move("E1", "G1"))
+		if (move == chess::Move("E1", "G1", chess::Piece::King))
 			right_castle = true;
-		if (move == chess::Move("E1", "C1"))
+		if (move == chess::Move("E1", "C1", chess::Piece::King))
 			left_castle = true;
 	}
 	EXPECT_TRUE(right_castle);
@@ -110,9 +110,9 @@ TEST(chess, castle_none) {
 	{
 		EXPECT_EQ(pos, copy)
 			<< "Last move: " << move.chess_notation() << std::endl;
-		if (move == chess::Move("E1", "G1"))
+		if (move == chess::Move("E1", "G1", chess::Piece::King))
 			right_castle = true;
-		if (move == chess::Move("E1", "C1"))
+		if (move == chess::Move("E1", "C1", chess::Piece::King))
 			left_castle = true;
 	}
 	EXPECT_FALSE(right_castle);
@@ -192,6 +192,38 @@ TEST(chess, square_knight_moves)
 	for (int i = 0; i < 64; i++)
 		EXPECT_TRUE(squares_visited[i])
 			<< chess::Square(i).chess_notation();
+}
+
+TEST(chess, is_legal) {
+	std::unordered_set<chess::Move> all_moves;
+	for (int seed = 1; seed <= DebugRelease(10, 20); seed++)
+	{
+		chess::ChessPosition<true> pos;
+		for (int ply = 0; ply < DebugRelease(100, 200); ply++)
+		{
+			// Get all legal moves
+			std::unordered_set<chess::Move> legal_moves;
+			for (auto move : pos.all_legal_moves())
+			{
+				legal_moves.insert(move);
+				all_moves.insert(move);
+			}
+
+			// Verify each move is_legal iff contained in legal_moves
+			for (auto move : all_moves)
+			{
+				if (legal_moves.contains(move))
+					EXPECT_TRUE(pos.is_legal(move)) << move.chess_notation() << " " << pos.fen() << " " << ply;
+				else
+					EXPECT_FALSE(pos.is_legal(move)) << move.chess_notation() << " " << pos.fen() << " " << ply;
+			}
+			size_t number_of_moves;
+			chess::Move move = random_move<chess::ChessPosition<true>, chess::Move>(pos, seed, number_of_moves);
+			if (number_of_moves == 0)
+				break;
+			pos += move;
+		}
+	}
 }
 
 TEST(chess, minmax_vs_random) {

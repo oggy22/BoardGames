@@ -117,7 +117,7 @@ public:
 		(*this)[move.cap2()] = (*this)[move.from()];
 	}
 
-	bool easycheck_winning_move(Move move) { return false; }
+	bool easycheck_winning_move(Move move) const { return false; }
 
 	std::experimental::generator<Square> get_all_legal_squares() const
 	{
