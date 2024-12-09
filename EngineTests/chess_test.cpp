@@ -194,6 +194,36 @@ TEST(chess, square_knight_moves)
 			<< chess::Square(i).chess_notation();
 }
 
+TEST(chess, is_legal) {
+	std::unordered_set<chess::Move> all_moves;
+	for (int seed = 1; seed <= DebugRelease(20, 20); seed++)
+	{
+		chess::ChessPosition<true> pos;
+		for (int ply = 0; ply < DebugRelease(200, 200); ply++)
+		{
+			// Get all legal moves
+			std::unordered_set<chess::Move> legal_moves;
+			for (auto move : pos.all_legal_moves())
+			{
+				legal_moves.insert(move);
+				all_moves.insert(move);
+			}
+
+			// Verify each move is_legal iff contained in legal_moves
+			for (auto move : all_moves)
+			{
+				if (legal_moves.contains(move))
+					EXPECT_TRUE(pos.is_legal(move)) << move.chess_notation() << " " << pos.fen() << " " << ply;
+				else
+					EXPECT_FALSE(pos.is_legal(move)) << move.chess_notation() << " " << pos.fen() << " " << ply;
+			}
+			size_t number_of_moves;
+			chess::Move move = random_move<chess::ChessPosition<true>, chess::Move>(pos, seed, number_of_moves);
+			pos += move;
+		}
+	}
+}
+
 TEST(chess, minmax_vs_random) {
 	for (int round = 1; round <= DebugRelease(1, 2); round++)
 	{
@@ -212,7 +242,7 @@ TEST(chess, minmax_vs_random) {
 				random_move<chess::ChessPosition<true>, chess::Move>(pos, 0) :
 				MinMax<chess::ChessPosition<true>, chess::Move>::FindBestMove(
 					pos,
-					4,
+					DebugRelease(4, 6),
                     [](chess::ChessPosition<true>& pos) -> int { return pos.evaluate<1>(); });
 
 			if (!move.is_valid())
@@ -336,8 +366,10 @@ TEST(chess, random_games) {
 			}
 			
 			EXPECT_TRUE(pos.is_legal(move));
-
-			pos += move;
+			if (!pos.play_if_legal(move))
+			{
+				EXPECT_TRUE(pos.play_if_legal(move)) << move.chess_notation() << std::endl << pos.fen() << std::endl;
+			}
 
 			// No pawns on the 1st and 8th rows
 			chess::Square first("A1"), last("A8");

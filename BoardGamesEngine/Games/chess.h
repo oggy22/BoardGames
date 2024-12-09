@@ -253,7 +253,9 @@ namespace chess {
             ret += _from.chess_notation();
             ret += "-";
             ret += _to.chess_notation();
-            ret += ""; // captured
+            ret += "(";
+            ret += (_captured != Piece::None ? "cap," : ",");
+            ret += (_promotion != Piece::None ? "prom)" : ")");
             return ret;
         }
 
@@ -520,25 +522,231 @@ namespace chess {
             return ret;
         }
 
+#pragma optimize("", off)
         bool play_if_legal(Move move)
-        {            
+        {
+			// Moving the right color piece?
 			if (sgn(table[move.from()]) != this->turn())
 				return false;
-            //TODO: if moving king, check distance to to from
+            
+            // Capture equals to move.to()	
             if (move.captured() != table[move.to()])
                 return false;
 
-            //TODO: check if move.from to move.to is clear?
-            
+            // Capture must of oposite color
+            if (move.captured() != Piece::None)
+                if (sgn(move.captured()) == sgn(table[move.from()]))
+                    return false;
+
+            // Promotion only for pawns and end rows
+            if (move.promotion() != Piece::None)
+            {
+                if (abs(table[move.from()]) != Piece::Pawn)
+                    return false;
+
+                if (move.to().y() != 0 && move.to().y() != 7)
+                    return false;
+            }
+
+            Piece abs_piece = abs(square(move.from()));
+
+            // If moving king, check distance to to from or castling        
+            if (abs_piece == Piece::King)
+            {
+                int distance = move.from().king_distance(move.to());
+                
+                switch (distance)
+                {
+                case 1: break;
+                case 2:
+                {
+					// Must be castling
+                    if (is_checked())
+                        return false;
+
+                    if (table[move.from()] == Piece::King)
+                    {
+                        if (move.from() != S("E1"))
+                            return false;
+                        if (move.to() == S("C1") && square(S("A1")) == Piece::Rook)
+                        {
+                            if (square(S("B1")) != Piece::None ||
+                                square(S("C1")) != Piece::None ||
+                                square(S("D1")) != Piece::None)
+                                return false;
+                            if (is_controlled_by("D1", Player::Second))
+                                return false;
+                        }
+                        else if (move.to() == S("G1") && square(S("H1")) == Piece::Rook)
+                        {
+                            if (square(S("F1")) != Piece::None ||
+                                square(S("G1")) != Piece::None)
+                                return false;
+                            if (is_controlled_by("F1", Player::Second))
+                                return false;
+                        }
+                        else return false;
+                    }
+					else if (table[move.from()] == Piece::OtherKing)
+					{
+						if (move.from() != S("E8"))
+							return false;
+                        if (move.to() == S("C8") && square(S("A8")) == Piece::OtherRook)
+                        {
+                            if (square(S("B8")) != Piece::None ||
+                                square(S("C8")) != Piece::None ||
+                                square(S("D8")) != Piece::None)
+                                return false;
+                            if (is_controlled_by("D8", Player::First))
+                                return false;
+                        }
+                        else if (move.to() == S("G8") && square(S("H8")) == Piece::OtherRook)
+                        {
+                            if (square(S("F8")) != Piece::None ||
+                                square(S("G8")) != Piece::None)
+                                return false;
+                            if (is_controlled_by("F8", Player::First))
+                                return false;
+                        }
+						else return false;
+					}
+					else return false;
+					if (is_checked(turn()))
+						return false;
+                    break;
+                }
+				default: return false;
+                }
+            }
+            else if (abs_piece == Piece::Pawn)
+            {
+                // If on last row make sure there is promotion
+                if (move.to().y() == 0 || move.to().y() == 7)
+                    if (move.promotion() == Piece::None)
+                        return false;
+
+                int dy = move.to().y() - move.from().y();
+                int dx = move.to().x() - move.from().x();
+
+                // Check direction
+                if (this->turn() == Player::First)
+                {
+                    if (dy <= 0)
+                        return false;
+                }
+                else
+                {
+                    if (dy >= 0)
+                        return false;
+                }
+                
+                // Checks based on dx
+                switch (std::abs(dx))
+                {
+                case 0:
+                {
+                    if (move.captured() != Piece::None)
+                        return false;
+                    break;
+                }
+                case 1:
+                {
+                    if (std::abs(dy) != 1)
+                        return false;
+                    if (move.captured() == Piece::None)
+                        return false;
+                    break;
+                }
+                default: return false;
+                }
+
+                // Checks based on dy
+                switch (std::abs(dy))
+                {
+                case 1:
+                {
+                    break;
+                }
+                case 2:
+                {
+                    if (move.captured() != Piece::None)
+                        return false;
+
+                    if (std::abs(dx) != 0)
+                        return false;
+
+                    if (this->turn() == Player::First)
+                    {
+                        if (move.from().y() != 1 || move.to().y() != 3)
+                            return false;
+                        if (square(SquareBase<8, 8>(move.from().x(), 2)) != Piece::None)
+                            return false;
+                    }
+                    else
+                    {
+                        if (move.from().y() != 6 || move.to().y() != 4)
+                            return false;
+                        if (square(SquareBase<8, 8>(move.from().x(), 5)) != Piece::None)
+                            return false;
+                    }
+                    break;
+                }
+                default: return false;
+                }
+            }
+            else // Queen, Rook or Bishop
+            {
+                Direction dir = move.from().get_direction_to(move.to());
+                Piece abs_piece = abs(square(move.from()));
+                if (dir != Direction::none)
+                {
+                    switch (dir)
+                    {
+                        case Direction::up: if (abs_piece != Piece::Queen && abs_piece != Piece::Rook) return false; break;
+                        case Direction::down: if (abs_piece != Piece::Queen && abs_piece != Piece::Rook) return false; break;
+                        case Direction::left: if (abs_piece != Piece::Queen && abs_piece != Piece::Rook) return false; break;
+                        case Direction::right: if (abs_piece != Piece::Queen && abs_piece != Piece::Rook) return false; break;
+                        case Direction::upleft: if (abs_piece != Piece::Queen && abs_piece != Piece::Bishop) return false; break;
+                        case Direction::upright: if (abs_piece != Piece::Queen && abs_piece != Piece::Bishop) return false; break;
+                        case Direction::downleft: if (abs_piece != Piece::Queen && abs_piece != Piece::Bishop) return false; break;
+                        case Direction::downright: if (abs_piece != Piece::Queen && abs_piece != Piece::Bishop) return false; break;
+                        default: DCHECK_FAIL;
+                    }
+                    Square sq = move.from();
+                    //sq.move(dir);
+                    DCHECK(sq.move(dir));
+                    while (sq != move.to())
+                    {
+                        if (square(sq) != Piece::None)
+                            return false;
+
+                        DCHECK(sq.move(dir));
+                    }
+                }
+                else // Knight
+                {
+                    if (abs(square(move.from())) != Piece::Knight)
+                        return false;
+                }
+            }
+
             (*this) += move;
+
+            // If still checked revert the move and return false
+            if (is_checked(oponent(turn())))
+            {
+                (*this) -= move;
+                return false;
+            }
+
             if (King1.king_distance(King2) >= 2 && !is_checked(oponent(turn())))
                 return true;
 
-            // If still checked revert the move and return false
             (*this) -= move;
             return false;
         }
-        
+#pragma optimize("", on)
+
         bool operator==(const ChessPosition<QPO>& other) const
         {
             if (King1 != other.King1 || King2 != other.King2)
@@ -869,7 +1077,14 @@ return true;                                    \
             return false;
         }
         bool any_pawns() const;
-        bool is_legal(Move move) const { return square(move.to()) == move.captured(); }
+        bool is_legal(Move move) /*const*/
+        {
+            bool legal = this->play_if_legal(move);
+            if (!legal)
+                return false;
+            (*this) -= move;
+            return true;
+        }
         bool is_reverse_legal(Move move) const { return square(move.from()) == Piece::None && square(move.to()) != Piece::None; }
 
         Piece operator[](Square square) const { return table[square]; }
