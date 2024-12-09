@@ -58,7 +58,7 @@ TEST(Connect4_test, FourByThree)
 	MNKGravity<4, 3, 3> FourByThree;
 	for (int i = 0; i < moves.size(); i++)
 	{
-		auto move = MinMax<MNKGravity<4, 3, 3>, Move<4, 3>>::FindBestMove(FourByThree, 12);
+		auto move = MinMax<MNKGravity<4, 3, 3>, Move<4, 3>, KillerOptions::Multiple, false>::FindBestMove(FourByThree, 12);
 		GTEST_LOG_(INFO) << move.chess_notation();
 		if (i < moves.size() - 1)
 			EXPECT_FALSE(FourByThree.easycheck_winning_move(move));

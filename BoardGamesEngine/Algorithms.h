@@ -76,7 +76,7 @@ private:
 	payload_t value;
 };
 
-template <typename Pos, typename Move, KillerOptions ko = KillerOptions::Multiple>
+template <typename Pos, typename Move, KillerOptions ko = KillerOptions::SingleUpdating, bool incremental=false>
 requires BoardPosition<Pos, Move>
 class MinMax
 {
@@ -114,15 +114,24 @@ public:
 		minmax.eval_func = eval_func;
 		minmax.transposition_table.resize(depth + 1);
 
+		if constexpr (incremental)
+		{
+			// Performing iterative deepening will help with better move ordering
+			// by having the best moves from previous iterations with lower depths.
+			for (int curr_depth = 2; curr_depth < depth; curr_depth += 2)
+			{
+				minmax.Find(curr_depth);
+
+				// Clean up the tables
+				minmax.clean_up_transposition_table();
+			}
+		}
+
 #ifdef STATS
 		stats.resize(depth + 1);
 #endif
 
-		Move move;
-		if (position.turn() == Player::First)
-			move = minmax.Find<Player::First>(0, depth).move;
-		else
-			move = minmax.Find<Player::Second>(0, depth).move;
+		Move move = minmax.Find(depth).move;
 #ifdef STATS
 		for (int i = 0; i <= depth; i++)
 		{
@@ -197,6 +206,20 @@ private:
 	std::function<EvalValue::payload_t(Pos& position)> eval_func;
 	
 	std::vector<std::unordered_map<uint64_t, MoveVal>> transposition_table;
+
+	void clean_up_transposition_table()
+	{
+		for (auto& table : transposition_table)
+			table.clear();
+	}
+
+	MoveVal Find(int max_depth)
+	{
+		if (position.turn() == Player::First)
+			return Find<Player::First>(0, max_depth);
+		else
+			return Find<Player::Second>(0, max_depth);
+	}
 
 	template <Player player1>
 	MoveVal Find(int curr_depth, int max_depth, EvalValue cut = EvalValue::Win<player1>())

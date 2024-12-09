@@ -242,9 +242,9 @@ TEST(chess, minmax_vs_random) {
 			bool random = (round + pos.ply()) % 2 == 0;
 			chess::Move move = random ?
 				random_move<chess::ChessPosition<true>, chess::Move>(pos, 0) :
-				MinMax<chess::ChessPosition<true>, chess::Move>::FindBestMove(
+				MinMax<chess::ChessPosition<true>, chess::Move, KillerOptions::Fixed3, true>::FindBestMove(
 					pos,
-					4,
+					DebugRelease(4, 6),
                     [](chess::ChessPosition<true>& pos) -> int { return pos.evaluate<1>(); });
 
 			if (!move.is_valid())
