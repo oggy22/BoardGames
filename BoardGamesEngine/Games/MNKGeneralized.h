@@ -69,6 +69,7 @@ class MNKGeneralized : public BoardBase<W, H, Field>
 	static_assert(R <= W && R <= H, "R may not be greater than either dimension");
 
 public:
+	using Move = typename ::Move<W, H>;
 	int32_t Evaluate() const
 	{
 		return 0;
@@ -206,7 +207,7 @@ public:
 		return true;
 	}
 
-	bool is_legal(Move<W,H> move) const
+	bool is_legal(Move move) const
 	{
 		DCHECK(move.field != Field::Empty);
 		if ((*this)[move.square] != Field::Empty)
@@ -224,7 +225,7 @@ public:
 		return true;
 	}
 
-	bool easycheck_winning_move(Move<W, H> move) const
+	bool easycheck_winning_move(Move move) const
 	{
 		SquareBase<W, H> sq;
 
@@ -266,7 +267,7 @@ public:
 		return false;
 	}
 
-	bool play_if_legal(Move<W, H> move)
+	bool play_if_legal(Move move)
 	{
 		if (!move.is_valid())
 			return false;
@@ -278,13 +279,13 @@ public:
 		return true;
 	}
 
-	void operator+=(Move<W, H> move)
+	void operator+=(Move move)
 	{
 		this->move();
 		this->square(move.square) = move.field;
 	}
 
-	void operator-=(Move<W, H> move)
+	void operator-=(Move move)
 	{
 		this->reverse_move();
 		this->square(move.square) = Field::Empty;

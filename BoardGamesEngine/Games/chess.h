@@ -358,6 +358,7 @@ namespace chess {
         }
 
     public:
+		using Move = chess::Move;
         ChessPosition(bool only_kings = false)
         {
             for (int i = 0; i < 64; i++)

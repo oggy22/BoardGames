@@ -76,10 +76,11 @@ private:
 	payload_t value;
 };
 
-template <typename Pos, typename Move, KillerOptions ko = KillerOptions::SingleUpdating, bool incremental=false>
-requires BoardPosition<Pos, Move>
+template <typename Pos, KillerOptions ko = KillerOptions::SingleUpdating, bool incremental=false>
+requires BoardPosition<Pos>
 class MinMax
 {
+	using Move = typename Pos::Move;
 #ifdef STATS
 	class Stats
 	{

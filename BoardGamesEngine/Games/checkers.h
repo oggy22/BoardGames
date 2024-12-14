@@ -51,6 +51,7 @@ public:
 class CheckersPosition : public BoardBase<8, 8, Piece>
 {
 public:
+	using Move = typename checkers::Move;
 	CheckersPosition()
 	{
 		for (auto& sq : this->get_squares())

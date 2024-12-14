@@ -31,7 +31,7 @@ TEST(Connect4_test, play_20_moves)
 	Move<7, 6> move;
 	for (int i = 0; i < 20; i++)
 	{
-		move = MinMax<Connect4, Move<7, 6>>::FindBestMove(connect4, 6);
+		move = MinMax<Connect4>::FindBestMove(connect4, 6);
 		GTEST_LOG_(INFO) << move.chess_notation();
 		EXPECT_TRUE(connect4.is_legal(move)) << " not legal move";
 		bool game_over = connect4.easycheck_winning_move(move);
@@ -58,7 +58,7 @@ TEST(Connect4_test, FourByThree)
 	MNKGravity<4, 3, 3> FourByThree;
 	for (int i = 0; i < moves.size(); i++)
 	{
-		auto move = MinMax<MNKGravity<4, 3, 3>, Move<4, 3>, KillerOptions::Multiple, false>::FindBestMove(FourByThree, 12);
+		auto move = MinMax<MNKGravity<4, 3, 3>, KillerOptions::Multiple, false>::FindBestMove(FourByThree, 12);
 		GTEST_LOG_(INFO) << move.chess_notation();
 		if (i < moves.size() - 1)
 			EXPECT_FALSE(FourByThree.easycheck_winning_move(move));
