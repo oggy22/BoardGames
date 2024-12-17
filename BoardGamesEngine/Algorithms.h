@@ -132,7 +132,8 @@ public:
 	}
 
 	Pos position;
-	KillerMoveManager<ko, Move> killer_manager;
+	std::vector<KillerMoveManager<ko, Move>> killer_manager;
+	
 	MinMax(const Pos& position, int depth) :
 		position(position),
 		killer_manager(depth + 1)
@@ -150,7 +151,7 @@ private:
 		if constexpr (ko != KillerOptions::None)
 		{
 			Player turn = position.turn();
-			for (Move move : killer_manager.all_killers(depth))
+			for (Move move : killer_manager[depth].all_killers())
 			{
 				if (position.play_if_legal(move))
 				{
@@ -176,7 +177,7 @@ private:
 			}
 			else
 			{
-				if (!killer_manager.is_killer(move, depth))
+				if (!killer_manager[depth].is_killer(move))
 					co_yield move;
 				else
 					position -= move;
@@ -260,7 +261,7 @@ private:
 				: 0;
 		}
 
-		killer_manager.update(best.move, curr_depth);
+		killer_manager[curr_depth].update(best.move);
 
 		if constexpr (Pos::implements_hash())
 		{

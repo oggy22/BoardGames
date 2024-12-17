@@ -24,13 +24,13 @@ class KillerMoveManager
 {
 	static_assert(killerOptions >= KillerOptions::Fixed2, "This implementation is only for fixed killer options with depth");
 	const constexpr static int array_size = static_cast<int>(killerOptions) - 8;
-    std::vector<std::array<Move, array_size>> killers;
+    std::array<Move, array_size> killers;
 
 public:
-	KillerMoveManager(int depth) : killers(depth + 1) {}
-	bool is_killer(Move move, int depth)
+	KillerMoveManager(int depth) {}
+	bool is_killer(Move move)
 	{
-		for (auto killer : killers[depth])
+		for (auto killer : killers)
 			if (killer == move)
 				return true;
 		return false;
@@ -56,52 +56,52 @@ template <typename Move>
 class KillerMoveManager<KillerOptions::None, typename Move>
 {
 public:
-	void is_killer(Move move, int depth) { return false; }
+	void is_killer(Move move) { return false; }
 };
 
 template <typename Move>
 class KillerMoveManager<KillerOptions::SingleStatic, typename Move>
 {
-	std::vector<Move> killers;
+	Move killer;
 public:
-	KillerMoveManager(int depth) : killers(depth, Move()) {}
-	void is_killer(Move move, int depth) { return killers[depth] == move; }
-	void update(Move move, int depth) { /* do nothing */ }
-	std::experimental::generator<Move> all_killers(int depth)
+	KillerMoveManager(int depth) : killer(Move()) {}
+	void is_killer(Move move) { return killer == move; }
+	void update(Move move) { /* do nothing */ }
+	std::experimental::generator<Move> all_killers()
 	{
-		if (killers[depth].is_valid())
-			co_yield killers[depth];
+		if (killer.is_valid())
+			killer;
 	}
 };
 
 template <typename Move>
 class KillerMoveManager<KillerOptions::SingleUpdating, typename Move>
 {
-	std::vector<Move> killers;
+	Move killer;
 public:
-	KillerMoveManager(int depth) : killers(depth, Move()) {}
-	bool is_killer(Move move, int depth) { return killers[depth] == move; }
-	void update(Move move, int depth) { killers[depth] = move; }
-	std::experimental::generator<Move> all_killers(int depth)
+	KillerMoveManager() : killer(Move()) {}
+	bool is_killer(Move move) { return killer == move; }
+	void update(Move move) { killer = move; }
+	std::experimental::generator<Move> all_killers()
 	{
-		if (killers[depth].is_valid())
-			co_yield killers[depth];
+		if (killer.is_valid())
+			co_yield killer;
 	}
 };
 
 template <typename Move>
 class KillerMoveManager<KillerOptions::Multiple, typename Move>
 {
-    std::vector<std::unordered_set<Move, std::hash<Move>>> killers;
+    std::unordered_set<Move, std::hash<Move>> killers;
 
 public:
-	KillerMoveManager(int depth) : killers(depth+1) {}
-	bool is_killer(Move move, int depth) { return killers[depth].contains(move); }
-	std::experimental::generator<Move> all_killers(int depth)
+	KillerMoveManager() {}
+	bool is_killer(Move move) { return killers.contains(move); }
+	std::experimental::generator<Move> all_killers()
 	{
-		for (auto move : killers[depth])
+		for (auto move : killers)
 			co_yield move;
 	}
-	void update(Move move, int depth) { killers[depth].insert(move); }
-	int size(int depth) { return int(killers[depth].size()); }
+	void update(Move move) { killers.insert(move); }
+	int size() { return int(killers.size()); }
 };
