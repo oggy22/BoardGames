@@ -63,7 +63,7 @@ TEST(checkers, minmax) {
 	checkers::CheckersPosition pos;
 	for (int i = 0; i < 10; i++)
 	{
-		checkers::Move move = MinMax<checkers::CheckersPosition, checkers::Move>::FindBestMove(pos, 4);
+		checkers::Move move = MinMax<checkers::CheckersPosition>::FindBestMove(pos, 4);
 		EXPECT_TRUE(move.is_valid());
 
 		pos += move;

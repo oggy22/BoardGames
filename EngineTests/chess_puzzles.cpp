@@ -9,18 +9,18 @@ void check(std::string pgn_or_fen, int depth, int mate_in) {
 	chess::Move move;
 	for (int i = 1; i < mate_in; i++) {
 		// White move
-		move = MinMax<chess::ChessPosition<false>, chess::Move>::FindBestMove(pos, depth);
+		move = MinMax<chess::ChessPosition<false>>::FindBestMove(pos, depth);
 		pos += move;
 		EXPECT_FALSE(pos.is_check_mate()) << "Checkmate in only " << i << " moves instead of " << mate_in;
 
 		// Black move
-		move = MinMax<chess::ChessPosition<false>, chess::Move>::FindBestMove(pos, depth);
+		move = MinMax<chess::ChessPosition<false>>::FindBestMove(pos, depth);
 		pos += move;
 		EXPECT_FALSE(pos.is_check_mate());
 	}
 
 	// Final white move
-	move = MinMax<chess::ChessPosition<false>, chess::Move>::FindBestMove(pos, depth);
+	move = MinMax<chess::ChessPosition<false>>::FindBestMove(pos, depth);
 	pos += move;
 	EXPECT_TRUE(pos.is_check_mate());
 }

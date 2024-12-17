@@ -58,6 +58,16 @@ public:
 			return value < other.value;
 	}
 
+	template <Player player>
+	bool is_better_or_same(EvalValue other)
+	{
+		if constexpr (player == Player::First)
+			return value >= other.value;
+
+		if constexpr (player == Player::Second)
+			return value <= other.value;
+	}
+
 	//EvalValue& operator=(const EvalValue&) = default;
 
 	EvalValue() {}
@@ -66,10 +76,11 @@ private:
 	payload_t value;
 };
 
-template <typename Pos, typename Move, KillerOptions ko = KillerOptions::Multiple>
-requires BoardPosition<Pos, Move>
+template <typename Pos, KillerOptions ko = KillerOptions::SingleUpdating, bool incremental=false>
+requires BoardPosition<Pos>
 class MinMax
 {
+	using Move = typename Pos::Move;
 #ifdef STATS
 	class Stats
 	{
@@ -104,15 +115,24 @@ public:
 		minmax.eval_func = eval_func;
 		minmax.transposition_table.resize(depth + 1);
 
+		if constexpr (incremental)
+		{
+			// Performing iterative deepening will help with better move ordering
+			// by having the best moves from previous iterations with lower depths.
+			for (int curr_depth = 2; curr_depth < depth; curr_depth += 2)
+			{
+				minmax.Find(curr_depth);
+
+				// Clean up the tables
+				minmax.clean_up_transposition_table();
+			}
+		}
+
 #ifdef STATS
 		stats.resize(depth + 1);
 #endif
 
-		Move move;
-		if (position.turn() == Player::First)
-			move = minmax.Find<Player::First>(0, depth).move;
-		else
-			move = minmax.Find<Player::Second>(0, depth).move;
+		Move move = minmax.Find(depth).move;
 #ifdef STATS
 		for (int i = 0; i <= depth; i++)
 		{
@@ -189,6 +209,20 @@ private:
 	
 	std::vector<std::unordered_map<uint64_t, MoveVal>> transposition_table;
 
+	void clean_up_transposition_table()
+	{
+		for (auto& table : transposition_table)
+			table.clear();
+	}
+
+	MoveVal Find(int max_depth)
+	{
+		if (position.turn() == Player::First)
+			return Find<Player::First>(0, max_depth);
+		else
+			return Find<Player::Second>(0, max_depth);
+	}
+
 	template <Player player1>
 	MoveVal Find(int curr_depth, int max_depth, EvalValue cut = EvalValue::Win<player1>())
 	{
@@ -248,8 +282,8 @@ private:
 			if (best2.val.is_better<player1>(best.val))
 				best = { move1, best2.val };
 
-			// Cut the search if better than the cut value
-			if (best.val.is_better<player1>(cut))
+			// Cut the search if better or same to the cut value
+			if (best.val.is_better_or_same<player1>(cut))
 				return best;
 		}
 

@@ -4,3 +4,10 @@ An extensible framework for programming search algorithms (minimax with cutting,
 To get local enlistment:
 1. `git clone https://github.com/oggy22/BoardGames`
 2. Open `BoardGames.sln`
+
+# Minmax algorithm
+The main algorithm for finding best moves, regardless of the game played, is the minmax algorithm. It is implemented in a highly templetized manner where you can provide any game as long as it satisfies the requirements specified by the C++ concept. The following heuristics are implemented:
+1. Alhpa-beta prunning
+1. Killer move
+1. Transposition tables
+

@@ -51,6 +51,7 @@ public:
 class CheckersPosition : public BoardBase<8, 8, Piece>
 {
 public:
+	using Move = typename checkers::Move;
 	CheckersPosition()
 	{
 		for (auto& sq : this->get_squares())
@@ -117,7 +118,7 @@ public:
 		(*this)[move.cap2()] = (*this)[move.from()];
 	}
 
-	bool easycheck_winning_move(Move move) { return false; }
+	bool easycheck_winning_move(Move move) const { return false; }
 
 	std::experimental::generator<Square> get_all_legal_squares() const
 	{

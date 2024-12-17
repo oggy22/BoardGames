@@ -225,14 +225,15 @@ namespace chess {
     public:
         bool is_valid() const { return _from.is_valid(); }
         Move() : _from() { }    // invalid move
-        Move(Square from, Square to, Piece captured = Piece::None, Piece promotion = Piece::None) :
+        Move(Square from, Square to, Piece piece, Piece captured = Piece::None, Piece promotion = Piece::None) :
             _from(from),
             _to(to),
+			_piece(piece),
             _captured(captured),
             _promotion(promotion)
         {
-            DCHECK(captured != Piece::King);
-            DCHECK(captured != Piece::OtherKing);
+            DCHECK(piece != Piece::None);
+            DCHECK(captured != Piece::King && captured != Piece::OtherKing);
             DCHECK(from.is_valid());
             DCHECK(to.is_valid());
             DCHECK(from != to);
@@ -244,6 +245,7 @@ namespace chess {
         friend std::ostream& operator<<(std::ostream& os, Move move);
         Square from() const { return _from; }
         Square to() const { return _to; }
+        Piece piece() const { return _piece; }
         Piece captured() const { return _captured; }
         Piece promotion() const { return _promotion; }
         std::string chess_notation() const
@@ -268,6 +270,7 @@ namespace chess {
 
     private:
         Square _from, _to;
+        Piece _piece;
         Piece _captured;
         Piece _promotion;
     };
@@ -355,6 +358,7 @@ namespace chess {
         }
 
     public:
+		using Move = chess::Move;
         ChessPosition(bool only_kings = false)
         {
             for (int i = 0; i < 64; i++)
@@ -491,7 +495,7 @@ namespace chess {
                 for (int y = miny; y <= maxy; y++)
                 {
                     Piece piece = table[Square(x, y)];
-                    ret += sgn(piece);
+                    ret += int(sgn(piece));
                 }
             return ret;
         }
@@ -502,36 +506,106 @@ namespace chess {
                 + king_protection_eval(this->King2);
         }
 
+        int count_center_pieces()
+        {
+			return
+                int(sgn(table[S("D4")])) +
+                int(sgn(table[S("E4")])) +
+                int(sgn(table[S("D5")])) +
+                int(sgn(table[S("E5")]));
+        }
+
         template <
             int material = 1, //Qs*9+Rs*5+Bs*3+Ks*3+Ps*1
             //int almost_promoted = 0, // white pawns on 7th rank - black pawns on 2nd rank
             int king_protection = 0, // count pieces around the king
             //int coverage = 0, // count squares controlled by white - black
-            int legal_moves = 0 // number of legal moves
+            int legal_moves = 0, // number of legal moves
+			int control_center = 0 // number of pieces in the center
         >
         int evaluate()
         {
             int ret = 0;
             if constexpr (material > 0) ret += material * get_material();
             //if const (almost_promoted)ret += almost_promoted * almost_promoted_evaluate();
-            if constexpr (king_protection)ret += king_protection * king_protection_eval();
+            if constexpr (king_protection > 0) ret += king_protection * king_protection_eval();
             //if const (coverage)ret += coverage * coverage_evaluate();
-            if constexpr (legal_moves > 0) ret += legal_moves * count_all_legal_moves() * turn();
+            if constexpr (legal_moves > 0) ret += legal_moves * count_all_legal_moves() * int(turn());
+			if constexpr (control_center > 0) ret += control_center * count_center_pieces();
             return ret;
         }
 
         bool play_if_legal(Move move)
-        {            
-			if (sgn(table[move.from()]) != this->turn())
-				return false;
-            //TODO: if moving king, check distance to to from
-            if (move.captured() != table[move.to()])
+        {
+            //BUG: this shouldn't be here, but minmax provides invalid moves sometimes
+            if (!move.is_valid())
                 return false;
 
-            //TODO: check if move.from to move.to is clear?
-            
+            Piece abs_piece = abs(move.piece());
+			// The assumption is that the move is legal in one chess position,
+			// so there is a number of things that don't have to be checked:
+			DCHECK(move.promotion() != Piece::None ==
+                ((move.to().y() == 0 || move.to().y() == 7) && abs_piece == Piece::Pawn));
+
+            Player player = this->turn();
+            if (square(move.from()) != move.piece())
+                return false;
+
+            if (square(move.to()) != move.captured())
+                return false;
+
+			if (sgn(square(move.from())) != player)
+				return false;
+         
+			// For all non-knight pieces check if there are no pieces on the way
+            if (abs_piece != Piece::Knight)
+            {
+				Direction dir = move.from().get_direction_to(move.to());
+                Square sq = move.from();
+                DCHECK(sq.move(dir));
+                while (sq != move.to())
+                {
+                    if (square(sq) != Piece::None)
+                        return false;
+
+                    DCHECK(sq.move(dir));
+                }
+
+                // Castling?
+                if (abs_piece == Piece::King && move.from().king_distance(move.to()) == 2)
+                {
+					if (is_checked(player))
+						return false;
+
+                    Square sq = move.from();
+                    DCHECK(sq.move(dir));
+					if (this->is_controlled_by(sq, oponent(player))) 
+						return false;
+
+                    // Keep moving in the same direction to the Rook's square
+                    Piece rook = player == Player::First ? Piece::Rook : Piece::OtherRook;
+					while (sq.move(dir))
+					{
+                        // When rook encountered it should be the last square
+                        if (square(sq) == rook)
+                        {
+                            if (sq.move(dir))
+                                return false;
+
+							goto perform_move;
+                        }
+
+						if (square(sq) != Piece::None)
+							return false;
+					}
+                    
+                    return false;
+                }
+            }
+
+perform_move:
             (*this) += move;
-            if (King1.king_distance(King2) >= 2 && !is_checked(oponent(turn())))
+            if (King1.king_distance(King2) >= 2 && !is_checked(player))
                 return true;
 
             // If still checked revert the move and return false
@@ -736,19 +810,19 @@ return true;                                    \
         {
             if (str == "O-O" && turn() == Player::First)
             {
-                return Move(King1, S("G1"));
+                return Move(King1, S("G1"), Piece::King);
             }
             if (str == "O-O-O" && turn() == Player::First)
             {
-                return Move(King1, S("C1"));
+                return Move(King1, S("C1"), Piece::King);
             }
             if (str == "O-O" && turn() == Player::Second)
             {
-                return Move(King2, S("G8"));
+                return Move(King2, S("G8"), Piece::OtherKing);
             }
             if (str == "O-O-O" && turn() == Player::Second)
             {
-                return Move(King2, S("C8"));
+                return Move(King2, S("C8"), Piece::OtherKing);
             }
             if (str.length() == 2)
             {
@@ -768,11 +842,11 @@ return true;                                    \
                     DCHECK(this->operator[](sq_from) == Piece::OtherPawn);
                 }
 
-            	return Move(sq_from, sq);
+            	return Move(sq_from, sq, square(sq_from));
             }
             if (str.length() == 3)
             {
-#define CHECKDIRECTION(MOVE) sq = sq_to; while (sq.MOVE()) { if ((*this)[sq] == piece) return Move(sq, sq_to); }
+#define CHECKDIRECTION(MOVE) sq = sq_to; while (sq.MOVE()) { if ((*this)[sq] == piece) return Move(sq, sq_to, square(sq)); }
 
 				Square sq_to(str.substr(1));
                 switch (str[0])
@@ -813,7 +887,7 @@ return true;                                    \
                         DCHECK_FAIL;
                     }
 
-#define CHECKMOVE(MOVE) sq = sq_to; if (sq.MOVE()) { if ((*this)[sq] == piece) return Move(sq, sq_to); }
+#define CHECKMOVE(MOVE) sq = sq_to; if (sq.MOVE()) { if ((*this)[sq] == piece) return Move(sq, sq_to, square(sq)); }
 
                     case 'N':
                     {
@@ -869,7 +943,17 @@ return true;                                    \
             return false;
         }
         bool any_pawns() const;
-        bool is_legal(Move move) const { return square(move.to()) == move.captured(); }
+           bool is_legal(Move move) const
+        {
+            auto* nonConstThis = const_cast<chess::ChessPosition<QPO>*>(this);
+
+            bool legal = nonConstThis->play_if_legal(move);
+            if (!legal)
+                return false;
+            (*nonConstThis) -= move;
+            return true;
+        }
+
         bool is_reverse_legal(Move move) const { return square(move.from()) == Piece::None && square(move.to()) != Piece::None; }
 
         Piece operator[](Square square) const { return table[square]; }
@@ -898,6 +982,7 @@ return true;                                    \
                     pgns[_ply] = move_to_pgn(move);
             }
 
+            DCHECK(square(move.from()) == move.piece());
             DCHECK(square(move.to()) == move.captured());
             square(move.to()) = move.promotion() == Piece::None ? square(move.from()) : move.promotion();
             square(move.from()) = Piece::None;
@@ -926,6 +1011,7 @@ return true;                                    \
 
         void operator-=(Move move)
         {
+            DCHECK(square(move.to()) == move.piece() || square(move.to()) == move.promotion());
             DCHECK(square(move.from()) == Piece::None);
             if (move.to() == King1)
             {
@@ -970,7 +1056,7 @@ else                    \
 sq2 = sq;                                                       \
 while (sq2.MOVE() && !belongs_to(square(sq2), player))          \
 {                                                               \
-    Move move(sq, sq2, square(sq2));                            \
+    Move move(sq, sq2, square(sq), square(sq2));                \
     PLAY_AND_YIELD                                              \
     if (move.captured() != Piece::None)                         \
         break;                                                  \
@@ -978,9 +1064,9 @@ while (sq2.MOVE() && !belongs_to(square(sq2), player))          \
 
 #define MOVE_ONCE_WITH_COND(MOVE, CONDITION)                    \
 sq2 = sq;                                                       \
-if (sq2.MOVE() && !belongs_to(square(sq2), player) && CONDITION)      \
+if (sq2.MOVE() && !belongs_to(square(sq2), player) && CONDITION)\
 {                                                               \
-    Move move(sq, sq2, square(sq2));                            \
+     Move move(sq, sq2, square(sq), square(sq2));                \
     PLAY_AND_YIELD                                              \
 }
 
@@ -1057,30 +1143,30 @@ if (sq2.MOVE() && !belongs_to(square(sq2), player) && CONDITION)      \
                     }
                     if (square(sqF) == Piece::None)
                     {
-                        Move move(sq, sqF, Piece::None, sqF.y() == 0 || sqF.y() == 7 ? queen : Piece::None);
+                        Move move(sq, sqF, square(sq), Piece::None, sqF.y() == 0 || sqF.y() == 7 ? queen : Piece::None);
                         PLAY_AND_YIELD
                     }
                     Square sqL = sqF, sqR = sqF;
                     if (sqL.move_left() && belongs_to(square(sqL), oponent(player)))
                     {
-                        Move move(sq, sqL, square(sqL), sqL.y() == 0 || sqL.y() == 7 ? queen : Piece::None);
+                        Move move(sq, sqL, square(sq), square(sqL), sqL.y() == 0 || sqL.y() == 7 ? queen : Piece::None);
                         PLAY_AND_YIELD
                     }
                     if (sqR.move_right() && belongs_to(square(sqR), oponent(player)))
                     {
-                        Move move(sq, sqR, square(sqR), sqR.y() == 0 || sqR.y() == 7 ? queen : Piece::None);
+                        Move move(sq, sqR, square(sq), square(sqR), sqR.y() == 0 || sqR.y() == 7 ? queen : Piece::None);
                         PLAY_AND_YIELD
                     }
                     if (square(sqF) == Piece::None)
                     {
                         if (sqF.y() == 2 && player == Player::First && sqF.move_up() && square(sqF) == Piece::None)
                         {
-                            Move move(sq, sqF, Piece::None);
+                            Move move(sq, sqF, square(sq), Piece::None);
                             PLAY_AND_YIELD
                         } else
                         if (sqF.y() == 5 && player == Player::Second && sqF.move_down() && square(sqF) == Piece::None)
                         {
-                            Move move(sq, sqF, Piece::None);
+                            Move move(sq, sqF, square(sq), Piece::None);
                             PLAY_AND_YIELD
                         }
                     }
@@ -1099,7 +1185,7 @@ if (sq2.MOVE() && !belongs_to(square(sq2), player) && CONDITION)      \
                     std::swap(square(right_rook), square(right_rook - 2));
                     (player == Player::First ? King1 : King2) = king + 2;
                     BoardBase::move();
-                    co_yield Move(king, king + 2);
+                    co_yield Move(king, king + 2, square(king+2));
                 }
                 
                 Square left_rook(0, y);
@@ -1109,7 +1195,7 @@ if (sq2.MOVE() && !belongs_to(square(sq2), player) && CONDITION)      \
                     std::swap(square(left_rook), square(left_rook + 3));
                     (player == Player::First ? King1 : King2) = king - 2;
                     BoardBase::move();
-                    co_yield Move(king, king - 2);
+                    co_yield Move(king, king - 2, square(king-2));
                 }
             }
 
