@@ -27,7 +27,7 @@ class KillerMoveManager
     std::array<Move, array_size> killers;
 
 public:
-	KillerMoveManager(int depth) {}
+	KillerMoveManager() {}
 	bool is_killer(Move move)
 	{
 		for (auto killer : killers)
@@ -36,18 +36,18 @@ public:
 		return false;
 	}
 
-	int size(int depth) { return array_size; }
-	void update(Move move, int depth)
+	int size() { return array_size; }
+	void update(Move move)
 	{
 		for (int pos = array_size - 1; pos > 0; pos--)
-			killers[depth][pos] = killers[depth][pos - 1];
+			killers[pos] = killers[pos - 1];
 
-		killers[depth][0] = move;
+		killers[0] = move;
 	}
 
-	std::experimental::generator<Move> all_killers(int depth)
+	std::experimental::generator<Move> all_killers()
 	{
-		for (auto move : killers[depth])
+		for (auto move : killers)
 			co_yield move;
 	}
 };
@@ -64,7 +64,7 @@ class KillerMoveManager<KillerOptions::SingleStatic, typename Move>
 {
 	Move killer;
 public:
-	KillerMoveManager(int depth) : killer(Move()) {}
+	KillerMoveManager() : killer(Move()) {}
 	void is_killer(Move move) { return killer == move; }
 	void update(Move move) { /* do nothing */ }
 	std::experimental::generator<Move> all_killers()
