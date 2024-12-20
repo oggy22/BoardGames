@@ -235,6 +235,8 @@ TEST(chess, minmax_vs_random) {
 		
 		while (true)
 		{
+			EXPECT_FALSE(pos.is_checked(oponent(pos.turn()))) << pos.fen() << std::endl;
+
 			// round1: White=minmax, Black=random
 			// round2: White=random, Black=minmax
 			// round3: White=minmax, Black=random
@@ -242,7 +244,7 @@ TEST(chess, minmax_vs_random) {
 			bool random = (round + pos.ply()) % 2 == 0;
 			chess::Move move = random ?
 				random_move<chess::ChessPosition<true>, chess::Move>(pos, 0) :
-				MinMax<chess::ChessPosition<true>, KillerOptions::Fixed3, true>::FindBestMove(
+				MinMax<chess::ChessPosition<true>, KillerOptions::Fixed2, true>::FindBestMove(
 					pos,
 					DebugRelease(4, 6),
                     [](chess::ChessPosition<true>& pos) -> int { return pos.evaluate<1>(); });

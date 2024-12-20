@@ -44,7 +44,7 @@ Player constexpr oponent(Player player)
     return Player(0 - int(player));
 }
 
-enum class Direction : uint8_t
+enum class Direction : uint16_t
 {
     none = 0,
     up = 1,
@@ -54,8 +54,38 @@ enum class Direction : uint8_t
     upleft = 16,
     upright = 32,
     downleft = 64,
-    downright = 128
+    downright = 128,
+	all_directions = up | down | left | right | upleft | upright | downleft | downright,
+    knight1 = 256,
+	knight2 = 512,
+	knight3 = 1024,
+	knight4 = 2048,
+	knight5 = 4096,
+	knight6 = 8192,
+	knight7 = 16384,
+	knight8 = 32768,
+	all_knights = knight1 | knight2 | knight3 | knight4 | knight5 | knight6 | knight7 | knight8,
+	all = all_directions | all_knights
 };
+
+inline Direction operator|(Direction lhs, Direction rhs) {
+    return static_cast<Direction>(
+        static_cast<std::underlying_type_t<Direction>>(lhs) |
+        static_cast<std::underlying_type_t<Direction>>(rhs)
+        );
+}
+
+inline Direction operator&(Direction lhs, Direction rhs) {
+    return static_cast<Direction>(
+        static_cast<std::underlying_type_t<Direction>>(lhs) &
+        static_cast<std::underlying_type_t<Direction>>(rhs)
+        );
+}
+
+inline Direction& operator|=(Direction& lhs, Direction rhs) {
+    lhs = lhs | rhs;
+    return lhs;
+}
 
 template<int W, int H>
 class SquareBase
@@ -90,18 +120,18 @@ public:
         return _square / W;
     }
 
-    bool move_left() { return ((_square--) % W) != 0; }
-    bool move_right() { return ((++_square) % W) != 0; }
-    bool move_up() { _square += W; return _square < W * H; }
-    bool move_down() { if (_square < W) return false; _square -= W; return true; }
+    inline bool move_left() { return ((_square--) % W) != 0; }
+    inline bool move_right() { return ((++_square) % W) != 0; }
+    inline bool move_up() { _square += W; return _square < W * H; }
+    inline bool move_down() { if (_square < W) return false; _square -= W; return true; }
 
-    bool move_upleft() { return move_up() && move_left(); }
-    bool move_upright() { return move_up() && move_right(); }
-    bool move_downleft() { return move_down() && move_left(); }
-    bool move_downright() { return move_down() && move_right(); }
+    inline bool move_upleft() { return move_up() && move_left(); }
+    inline bool move_upright() { return move_up() && move_right(); }
+    inline bool move_downleft() { return move_down() && move_left(); }
+    inline bool move_downright() { return move_down() && move_right(); }
 
     template <Direction dir>
-    bool move()
+    inline bool move()
     {
         switch (dir)
         {
@@ -113,11 +143,21 @@ public:
         case Direction::upright: return move_upright();
         case Direction::downleft: return move_downleft();
         case Direction::downright: return move_downright();
+
+        case Direction::knight1: return move_upleft() && move_up();
+        case Direction::knight2: return move_upleft() && move_left();
+        case Direction::knight3: return move_upright() && move_up();
+        case Direction::knight4: return move_upright() && move_right();
+        case Direction::knight5: return move_downleft() && move_down();
+        case Direction::knight6: return move_downleft() && move_left();
+        case Direction::knight7: return move_downright() && move_down();
+        case Direction::knight8: return move_downright() && move_right();
+
         default: DCHECK_FAIL;
         }
     }
 
-    bool move(Direction dir)
+    inline bool move(Direction dir)
     {
         switch (dir)
         {
