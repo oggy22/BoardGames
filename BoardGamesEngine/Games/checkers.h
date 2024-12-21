@@ -226,7 +226,9 @@ if (sq2.move() && belongs_to((*this)[sq2], oponent(player)))		\
 		}
 	}
 
-private:
+	void turn_off_all_trackings()
+	{
+	}
 };
 
 }

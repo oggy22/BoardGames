@@ -560,7 +560,8 @@ namespace chess {
 			// For all non-knight pieces check if there are no pieces on the way
             if (abs_piece != Piece::Knight)
             {
-				Direction dir = move.from().get_direction_to(move.to());
+				Direction dir = move.from().get_direction_to<false>(move.to());
+                DCHECK(dir != Direction::none);
                 Square sq = move.from();
                 DCHECK(sq.move(dir));
                 while (sq != move.to())
@@ -692,6 +693,11 @@ return true;                                    \
         }
 
         std::vector<std::string> pgns;
+
+        void turn_off_all_trackings()
+		{
+			_track_pgn = false;
+		}
 
         std::string move_to_pgn(Move move)
         {
@@ -1133,7 +1139,7 @@ else                                                                            
 sq2 = sq;                                                       \
 while (sq2.MOVE() && !belongs_to(square(sq2), player))          \
 {                                                               \
-    Direction dir_to = King.get_direction_to(sq2);              \
+    Direction dir_to = King.get_direction_to<true>(sq2);        \
     if (dir_check!=Direction(0) && (dir_check!=dir_to))         \
     {   if (square(sq2) == Piece::None) continue; else break;}  \
     Move move(sq, sq2, square(sq), square(sq2));                \
@@ -1174,7 +1180,7 @@ if (sq2.MOVE() && !belongs_to(square(sq2), player) && sq2.king_distance(other_ki
             do
             {
                 Piece piece = square(sq);
-				Direction dir_from = King.get_direction_to(sq);
+				Direction dir_from = King.get_direction_to<false>(sq);
                 if (!belongs_to(piece, player))
                     continue;
                 piece = abs(piece);

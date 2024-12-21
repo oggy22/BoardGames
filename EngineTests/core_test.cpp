@@ -135,3 +135,30 @@ TEST(Core, BoardBase_Rotate) {
 	BoardBase<4, 4, int> board4;
 	test_rotate<4, 4>(board4);
 }
+
+// Verify that get_direction_to(sq) and move(dir) are consistent.
+TEST(Core, Directions)
+{
+	for (int i = 0; i < 64; i++)
+	{
+		SquareBase<8, 8> sq_start(i);
+		Direction dir = Direction(1);
+
+		do
+		{
+			SquareBase<8, 8> sq = sq_start;
+
+			bool first = true;
+			while (sq.move(dir))
+			{
+				Direction dir2 = sq_start.get_direction_to<true>(sq);
+				if (first || is_queen_direction(dir))
+					EXPECT_EQ(dir, dir2);
+				else
+					EXPECT_NE(dir, dir2);
+
+				first = false;
+			}
+		} while ((dir = next_direction(dir)) != Direction::none);
+	}
+}

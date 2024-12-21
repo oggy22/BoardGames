@@ -157,7 +157,9 @@ public:
 	MinMax(const Pos& position, int depth) :
 		position(position),
 		killer_manager(depth + 1)
-	{}
+	{
+		this->position.turn_off_all_trackings();
+	}
 
 	struct MoveVal
 	{

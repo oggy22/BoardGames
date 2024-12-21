@@ -4,6 +4,7 @@
 #include <random>
 #include <string>
 #include <vector>
+#include <ostream>
 
 inline void failure()
 {
@@ -55,7 +56,9 @@ enum class Direction : uint16_t
     upright = 32,
     downleft = 64,
     downright = 128,
-	all_directions = up | down | left | right | upleft | upright | downleft | downright,
+	all_rooks = up | down | left | right,
+	all_bishops = upleft | upright | downleft | downright,
+	all_queens = all_rooks | all_bishops,
     knight1 = 256,
 	knight2 = 512,
 	knight3 = 1024,
@@ -65,28 +68,100 @@ enum class Direction : uint16_t
 	knight7 = 16384,
 	knight8 = 32768,
 	all_knights = knight1 | knight2 | knight3 | knight4 | knight5 | knight6 | knight7 | knight8,
-	all = all_directions | all_knights
+	all = all_queens | all_knights
 };
 
-inline Direction operator|(Direction lhs, Direction rhs) {
+inline std::ostream& operator<<(std::ostream& os, const Direction dir)
+{
+	if (dir == Direction::none)
+		return os << "none";
+	if (dir == Direction::all)
+		return os << "all";
+	if (dir == Direction::all_rooks)
+		return os << "all_rooks";
+	if (dir == Direction::all_bishops)
+		return os << "all_bishops";
+	if (dir == Direction::all_queens)
+		return os << "all_queens";
+	if (dir == Direction::all_knights)
+		return os << "all_knights";
+
+	if (dir == Direction::up)
+		return os << "up";
+	if (dir == Direction::down)
+		return os << "down";
+	if (dir == Direction::left)
+		return os << "left";
+	if (dir == Direction::right)
+		return os << "right";
+	if (dir == Direction::upleft)
+		return os << "upleft";
+	if (dir == Direction::upright)
+		return os << "upright";
+	if (dir == Direction::downleft)
+		return os << "downleft";
+	if (dir == Direction::downright)
+		return os << "downright";
+
+	if (dir == Direction::knight1)
+		return os << "knight1";
+	if (dir == Direction::knight2)
+		return os << "knight2";
+	if (dir == Direction::knight3)
+		return os << "knight3";
+	if (dir == Direction::knight4)
+		return os << "knight4";
+	if (dir == Direction::knight5)
+		return os << "knight5";
+	if (dir == Direction::knight6)
+		return os << "knight6";
+	if (dir == Direction::knight7)
+		return os << "knight7";
+	if (dir == Direction::knight8)
+		return os << "knight8";
+
+	return os << "unknown";
+}
+
+inline constexpr Direction operator|(Direction lhs, Direction rhs) {
     return static_cast<Direction>(
         static_cast<std::underlying_type_t<Direction>>(lhs) |
         static_cast<std::underlying_type_t<Direction>>(rhs)
         );
 }
 
-inline Direction operator&(Direction lhs, Direction rhs) {
+inline constexpr Direction operator&(Direction lhs, Direction rhs) {
     return static_cast<Direction>(
         static_cast<std::underlying_type_t<Direction>>(lhs) &
         static_cast<std::underlying_type_t<Direction>>(rhs)
         );
 }
 
-inline Direction& operator|=(Direction& lhs, Direction rhs) {
+inline constexpr Direction& operator|=(Direction& lhs, Direction rhs) {
     lhs = lhs | rhs;
     return lhs;
 }
 
+inline constexpr bool is_knight_direction(Direction dir) {
+    return (dir & Direction::all_knights) != Direction::none;
+}
+
+inline constexpr bool is_rook_direction(Direction dir) {
+    return (dir & Direction::all_rooks) != Direction::none;
+}
+
+inline constexpr bool is_bishop_direction(Direction dir) {
+    return (dir & Direction::all_bishops) != Direction::none;
+}
+
+inline constexpr bool is_queen_direction(Direction dir) {
+    return (dir & Direction::all_queens) != Direction::none;
+}
+
+inline constexpr Direction next_direction(Direction dir)
+{
+    return Direction(uint16_t(dir) * 2);
+}
 template<int W, int H>
 class SquareBase
 {
@@ -169,10 +244,20 @@ public:
         case Direction::upright: return move_upright();
         case Direction::downleft: return move_downleft();
         case Direction::downright: return move_downright();
+        
+        case Direction::knight1: return move_upleft() && move_up();
+        case Direction::knight2: return move_upleft() && move_left();
+        case Direction::knight3: return move_upright() && move_up();
+        case Direction::knight4: return move_upright() && move_right();
+        case Direction::knight5: return move_downleft() && move_down();
+        case Direction::knight6: return move_downleft() && move_left();
+        case Direction::knight7: return move_downright() && move_down();
+        case Direction::knight8: return move_downright() && move_right();
         default: DCHECK_FAIL;
         }
     }
 
+	template <bool include_knights>
     Direction get_direction_to(SquareBase sq)
     {
         if (sq == *this)
@@ -188,6 +273,31 @@ public:
             return dx > 0 ? Direction::upright : Direction::downleft;
         if (dx == -dy)
             return dx > 0 ? Direction::downright : Direction::upleft;
+
+        if constexpr (include_knights)
+        {
+            if (std::abs(dx) + std::abs(dy) == 3)
+            {
+                if (dx == -1 && dy == 2)
+					return Direction::knight1;
+				if (dx == -2 && dy == 1)
+					return Direction::knight2;
+				if (dx == 1 && dy == 2)
+					return Direction::knight3;
+				if (dx == 2 && dy == 1)
+					return Direction::knight4;
+
+                if (dx == -1 && dy == -2)
+					return Direction::knight5;
+				if (dx == -2 && dy == -1)
+					return Direction::knight6;
+				if (dx == 1 && dy == -2)
+					return Direction::knight7;
+				if (dx == 2 && dy == -1)
+					return Direction::knight8;
+                DCHECK_FAIL;
+            }
+        }
 
         return Direction::none;
     }
@@ -547,6 +657,7 @@ concept BoardPosition = requires(T pos, const T const_pos, T::Move move, Player 
     { const_pos.Evaluate() } -> std::convertible_to<int>;
     { pos += move } -> std::convertible_to<void>;
     { pos -= move } -> std::convertible_to<void>;
+    { pos.turn_off_all_trackings() } -> std::convertible_to<void>;
 };
 
 template <typename Board, typename Move = Board::Move>

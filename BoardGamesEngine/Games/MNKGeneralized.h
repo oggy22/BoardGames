@@ -436,6 +436,10 @@ public:
 			co_yield move;
 		}
 	}
+
+	void turn_off_all_trackings()
+	{
+	}
 };
 
 template <int W, int H, int R>
@@ -449,6 +453,10 @@ template <
 class MNKGravity : public MNKGeneralized<W, DimProp::None, H, DimProp::Gravity, R, false, false, false>
 {
 public:
+	void turn_off_all_trackings()
+	{
+	}
+
 	std::experimental::generator<Move<W, H>> all_legal_moves() const
 	{
 		for (int i = 0; i < W; i++)
