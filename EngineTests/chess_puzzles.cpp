@@ -44,4 +44,3 @@ TEST(chess_puzzles, SchusterMate) {
 	// https://lichess.org/Ii96fdur#6
 	check("1. e4 e5 2. Bc4 d6 3. Qf3 Nc6", 2, 1);
 }
-
