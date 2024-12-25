@@ -439,8 +439,10 @@ namespace chess {
                     fen += '/';
             } while (++sq);
             nonConstThis->flip_rows();
+            //TODO: implement ends, for example " b "
+            std::string extra = this->turn() == Player::First ? " w" : " b";
 
-            return fen.substr(0, fen.length() - 1);
+            return fen.substr(0, fen.length() - 1) /* + extra*/;
         }
 #pragma endregion
 

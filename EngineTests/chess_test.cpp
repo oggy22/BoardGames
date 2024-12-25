@@ -41,7 +41,43 @@ TEST(chess, pgn)
 	}
 }
 
-TEST(chess, fen) {
+TEST(chess, fen)
+{
+	for (int seed = 1; seed <= DebugRelease(10, 50); seed++)
+	{
+		chess::ChessPosition<true> pos;
+		pos.track_pgn();
+		stats moves;
+		int ply;
+		for (ply = 0; ply < 150; ply++)
+		{
+			Player player = pos.turn();
+			EXPECT_FALSE(pos.is_checked(oponent(player)));
+
+			// Get a random move and check that the board isn't affected
+			size_t number_of_moves;
+			chess::Move move = random_move<chess::ChessPosition<true>, chess::Move>(pos, seed, number_of_moves);
+
+			// Check for end of the game, either by checkmate or stalemate
+			if (number_of_moves == 0)
+				break;
+
+			pos += move;
+
+			std::string fen = pos.fen();
+			chess::ChessPosition<true> pos2(fen);
+			for (SquareBase<8, 8> square : SquareBase<8, 8>::all_squares())
+			{
+				EXPECT_EQ(pos[square], pos2[square]) << "seed=" << seed << " ply=" << pos.ply() << " fen=" << fen << " square=" << square.chess_notation() << std::endl;
+			}
+
+			// TODO: implement ends, for example " b "
+			//EXPECT_EQ(pos.turn(), pos2.turn());
+		}
+	}
+}
+
+TEST(chess, fen_specific_positions) {
 	chess::ChessPosition<true> pos(false);
 	chess::ChessPosition<true> pos_fen(std::string("4k3/8/8/8/8/8/8/4K3"));
 	std::string fen2 = pos_fen.fen();
