@@ -15,7 +15,7 @@ TEST(chess, pgn)
 {
 	for (int seed = 1; seed <= DebugRelease(10, 50); seed++)
 	{
-		chess::ChessPosition<true> pos;
+		chess::ChessPosition pos;
 		pos.track_pgn();
 		stats moves;
 		int ply;
@@ -26,7 +26,7 @@ TEST(chess, pgn)
 
 			// Get a random move and check that the board isn't affected
 			size_t number_of_moves;
-			chess::Move move = random_move<chess::ChessPosition<true>, chess::Move>(pos, seed, number_of_moves);
+			chess::Move move = random_move<chess::ChessPosition, chess::Move>(pos, seed, number_of_moves);
 			
 			// Check for end of the game, either by checkmate or stalemate
 			if (number_of_moves == 0)
@@ -35,7 +35,7 @@ TEST(chess, pgn)
 			pos += move;
 
 			std::string pgn = pos.pgn();
-			chess::ChessPosition<true> pos2(pgn);
+			chess::ChessPosition pos2(pgn);
 			EXPECT_EQ(pos, pos2) << "seed=" << seed << " ply=" << pos.ply() << " pgn=" << pgn << std::endl;
 		}
 	}
@@ -45,7 +45,7 @@ TEST(chess, fen)
 {
 	for (int seed = 1; seed <= DebugRelease(10, 50); seed++)
 	{
-		chess::ChessPosition<true> pos;
+		chess::ChessPosition pos;
 		pos.track_pgn();
 		stats moves;
 		int ply;
@@ -56,7 +56,7 @@ TEST(chess, fen)
 
 			// Get a random move and check that the board isn't affected
 			size_t number_of_moves;
-			chess::Move move = random_move<chess::ChessPosition<true>, chess::Move>(pos, seed, number_of_moves);
+			chess::Move move = random_move<chess::ChessPosition, chess::Move>(pos, seed, number_of_moves);
 
 			// Check for end of the game, either by checkmate or stalemate
 			if (number_of_moves == 0)
@@ -65,7 +65,7 @@ TEST(chess, fen)
 			pos += move;
 
 			std::string fen = pos.fen();
-			chess::ChessPosition<true> pos2(fen);
+			chess::ChessPosition pos2(fen);
 			for (SquareBase<8, 8> square : SquareBase<8, 8>::all_squares())
 			{
 				EXPECT_EQ(pos[square], pos2[square]) << "seed=" << seed << " ply=" << pos.ply() << " fen=" << fen << " square=" << square.chess_notation() << std::endl;
@@ -78,18 +78,18 @@ TEST(chess, fen)
 }
 
 TEST(chess, fen_specific_positions) {
-	chess::ChessPosition<true> pos(false);
-	chess::ChessPosition<true> pos_fen(std::string("4k3/8/8/8/8/8/8/4K3"));
+	chess::ChessPosition pos(false);
+	chess::ChessPosition pos_fen(std::string("4k3/8/8/8/8/8/8/4K3"));
 	std::string fen2 = pos_fen.fen();
 	EXPECT_EQ(std::string("4k3/8/8/8/8/8/8/4K3"), fen2);// << pos << std::endl << pos_fen;
 
-	chess::ChessPosition<true> pos_full(true);
-	chess::ChessPosition<true> pos_full_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR");
+	chess::ChessPosition pos_full(true);
+	chess::ChessPosition pos_full_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR");
 	EXPECT_EQ(pos_full, pos_full_fen);
 }
 
 TEST(chess, init_position) {
-	chess::ChessPosition<true> pos;
+	chess::ChessPosition pos;
 	EXPECT_FALSE(pos.is_checked(Player::First));
 	EXPECT_FALSE(pos.is_checked(Player::Second));
 
@@ -129,7 +129,7 @@ TEST(chess, init_position) {
 		count++;
 	}
 
-	chess::ChessPosition<true> pos_init;
+	chess::ChessPosition pos_init;
 	EXPECT_EQ(pos, pos_init);
 
 	EXPECT_EQ(count, 20)
@@ -137,8 +137,8 @@ TEST(chess, init_position) {
 }
 
 TEST(chess, invert) {
-	chess::ChessPosition<true> pos;
-	chess::ChessPosition<true> pos_copy = pos;
+	chess::ChessPosition pos;
+	chess::ChessPosition pos_copy = pos;
 	
 	// Invert and expect not equal
 	pos_copy.invert();
@@ -150,8 +150,8 @@ TEST(chess, invert) {
 }
 
 TEST(chess, castle) {
-	chess::ChessPosition<true> pos(std::string("4k3/8/8/8/8/8/8/R3K2R"));
-	chess::ChessPosition<true> copy(pos);
+	chess::ChessPosition pos(std::string("4k3/8/8/8/8/8/8/R3K2R"));
+	chess::ChessPosition copy(pos);
 
 	bool left_castle = false, right_castle = false;
 	for (chess::Move move : pos.all_legal_moves())
@@ -168,8 +168,8 @@ TEST(chess, castle) {
 }
 
 TEST(chess, castle_none) {
-	chess::ChessPosition<true> pos(std::string("4k3/8/8/8/8/8/1q4q1/R3K2R"));
-	chess::ChessPosition<true> copy(pos);
+	chess::ChessPosition pos(std::string("4k3/8/8/8/8/8/1q4q1/R3K2R"));
+	chess::ChessPosition copy(pos);
 
 	bool left_castle = false, right_castle = false;
 	for (chess::Move move : pos.all_legal_moves())
@@ -264,7 +264,7 @@ TEST(chess, is_legal) {
 	std::unordered_set<chess::Move> all_moves;
 	for (int seed = 1; seed <= DebugRelease(10, 20); seed++)
 	{
-		chess::ChessPosition<true> pos;
+		chess::ChessPosition pos;
 		for (int ply = 0; ply < DebugRelease(100, 200); ply++)
 		{
 			// Get all legal moves
@@ -284,7 +284,7 @@ TEST(chess, is_legal) {
 					EXPECT_FALSE(pos.is_legal(move)) << move.chess_notation() << " " << pos.fen() << " " << ply;
 			}
 			size_t number_of_moves;
-			chess::Move move = random_move<chess::ChessPosition<true>, chess::Move>(pos, seed, number_of_moves);
+			chess::Move move = random_move<chess::ChessPosition, chess::Move>(pos, seed, number_of_moves);
 			if (number_of_moves == 0)
 				break;
 			pos += move;
@@ -295,7 +295,7 @@ TEST(chess, is_legal) {
 TEST(chess, minmax_vs_random) {
 	for (int round = 1; round <= DebugRelease(1, 2); round++)
 	{
-		chess::ChessPosition<true> pos;
+		chess::ChessPosition pos;
 		pos.turn_on_material_tracking();
 		pos.track_pgn();
 		
@@ -309,11 +309,11 @@ TEST(chess, minmax_vs_random) {
 			// etc
 			bool random = (round + pos.ply()) % 2 == 0;
 			chess::Move move = random ?
-				random_move<chess::ChessPosition<true>, chess::Move>(pos, 0) :
-				MinMax<chess::ChessPosition<true>, KillerOptions::Fixed2, true>::FindBestMove(
+				random_move<chess::ChessPosition, chess::Move>(pos, 0) :
+				MinMax<chess::ChessPosition, KillerOptions::Fixed2, true>::FindBestMove(
 					pos,
 					DebugRelease(4, 6),
-                    [](chess::ChessPosition<true>& pos) -> int { return pos.evaluate<1>(); });
+                    [](chess::ChessPosition& pos) -> int { return pos.evaluate<1>(); });
 
 			if (!move.is_valid())
 			{
@@ -342,8 +342,8 @@ void print_stats(std::ofstream& file, stats stat, std::string name)
 
 TEST(chess, flip_board_test_initial)
 {
-	chess::ChessPosition<true> pos;
-	chess::ChessPosition<true> pos_copy = pos;
+	chess::ChessPosition pos;
+	chess::ChessPosition pos_copy = pos;
 	pos.flip_board();
 	EXPECT_EQ(pos, pos_copy);
 }
@@ -356,7 +356,7 @@ TEST(chess, random_games) {
 
 	for (int seed = 1; seed <= DebugRelease(20, 500); seed++)
 	{
-		chess::ChessPosition<true> pos;
+		chess::ChessPosition pos;
 		pos.track_pgn();
 		stats moves;
 		int ply;
@@ -366,9 +366,9 @@ TEST(chess, random_games) {
 			EXPECT_FALSE(pos.is_checked(oponent(player)));
 
 			// Get a random move and check that the board isn't affected
-			chess::ChessPosition<true> pos_backup = pos;
+			chess::ChessPosition pos_backup = pos;
 			size_t number_of_moves;
-			chess::Move move = random_move<chess::ChessPosition<true>, chess::Move>(pos, seed, number_of_moves);
+			chess::Move move = random_move<chess::ChessPosition, chess::Move>(pos, seed, number_of_moves);
 			if (number_of_moves > 0)
 				moves.add(int(number_of_moves));
 			
@@ -494,12 +494,12 @@ TEST(chess, material)
 {
 	for (int seed = 0; seed < 10; seed++)
 	{
-		chess::ChessPosition<true> pos;
+		chess::ChessPosition pos;
 		pos.turn_on_material_tracking();
 		size_t number_of_moves;
 		for (int i = 0; i < 1000; i++)
 		{
-			chess::Move move = random_move<chess::ChessPosition<true>, chess::Move>(pos, seed, number_of_moves);
+			chess::Move move = random_move<chess::ChessPosition, chess::Move>(pos, seed, number_of_moves);
 			if (!move.is_valid())
 				break;
 			pos += move;
@@ -512,16 +512,16 @@ TEST(chess, material)
 
 TEST(chess, hash)
 {
-	chess::ChessPosition<true> pos;
+	chess::ChessPosition pos;
 	
-	std::unordered_map<uint64_t, chess::ChessPosition<true>> hash_positions;
+	std::unordered_map<uint64_t, chess::ChessPosition> hash_positions;
 	for (int seed = 0; seed < 10; seed++)
 	{
-		chess::ChessPosition<true> pos;
+		chess::ChessPosition pos;
 		size_t number_of_moves;
 		for (int i = 0; i < 1000; i++)
 		{
-			chess::Move move = random_move<chess::ChessPosition<true>, chess::Move>(pos, seed, number_of_moves);
+			chess::Move move = random_move<chess::ChessPosition, chess::Move>(pos, seed, number_of_moves);
 			if (!move.is_valid())
 				break;
 			pos += move;

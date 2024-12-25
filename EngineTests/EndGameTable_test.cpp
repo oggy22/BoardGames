@@ -11,9 +11,9 @@ TEST(endtable_test, chess)
 {
 	int count = 0;
 
-	chess::ChessPosition<true> pos;
-	EndTable<chess::ConverterSimple<true>>::FindBestMove(pos);
-	EndTable<chess::ConverterReducing<true>>::FindBestMove(pos);
+	chess::ChessPosition pos;
+	EndTable<chess::ConverterSimple>::FindBestMove(pos);
+	EndTable<chess::ConverterReducing>::FindBestMove(pos);
 }
 
 TEST(endtable_test, Connect4)

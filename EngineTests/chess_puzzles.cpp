@@ -3,24 +3,24 @@
 #include "..\BoardGamesEngine\Algorithms.h"
 
 void check(std::string pgn_or_fen, int depth, int mate_in) {
-	chess::ChessPosition<false> pos(pgn_or_fen);
+	chess::ChessPosition pos(pgn_or_fen);
 	
 	EXPECT_EQ(pos.turn(), Player::First);
 	chess::Move move;
 	for (int i = 1; i < mate_in; i++) {
 		// White move
-		move = MinMax<chess::ChessPosition<false>>::FindBestMove(pos, depth);
+		move = MinMax<chess::ChessPosition>::FindBestMove(pos, depth);
 		pos += move;
 		EXPECT_FALSE(pos.is_check_mate()) << "Checkmate in only " << i << " moves instead of " << mate_in;
 
 		// Black move
-		move = MinMax<chess::ChessPosition<false>>::FindBestMove(pos, depth);
+		move = MinMax<chess::ChessPosition>::FindBestMove(pos, depth);
 		pos += move;
 		EXPECT_FALSE(pos.is_check_mate());
 	}
 
 	// Final white move
-	move = MinMax<chess::ChessPosition<false>>::FindBestMove(pos, depth);
+	move = MinMax<chess::ChessPosition>::FindBestMove(pos, depth);
 	pos += move;
 	EXPECT_TRUE(pos.is_check_mate());
 }

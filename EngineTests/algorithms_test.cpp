@@ -4,8 +4,8 @@
 
 TEST(Algorithm_suite, chess)
 {
-	chess::ChessPosition<false> pos(false);
-	MinMax<chess::ChessPosition<false>, KillerOptions::SingleUpdating, true>::FindBestMove(
+	chess::ChessPosition pos(false);
+	MinMax<chess::ChessPosition, KillerOptions::SingleUpdating, true>::FindBestMove(
 		pos,
 		DebugRelease(8 /* ~1s Debug */, 10 /* ~2s Release */));
 }
@@ -13,12 +13,12 @@ TEST(Algorithm_suite, chess)
 TEST(Algorithm_suite, chess_material)
 {
 	int count = 0;
-	chess::ChessPosition<false> pos(false);
+	chess::ChessPosition pos(false);
 	pos.turn_on_material_tracking();
-	MinMax<chess::ChessPosition<false>, KillerOptions::SingleUpdating, true>::FindBestMove(
+	MinMax<chess::ChessPosition, KillerOptions::SingleUpdating, true>::FindBestMove(
 		pos,
 		DebugRelease(6 /* ~1s Debug */, 8 /* ~2s Release */),
-		[&](chess::ChessPosition<false>& pos) -> EvalValue::payload_t
+		[&](chess::ChessPosition& pos) -> EvalValue::payload_t
 		{
 			count++;
 			return pos.evaluate<1>();

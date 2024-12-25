@@ -33,7 +33,7 @@
 ///// Generates all legal moves, but also updates the position with them
 ///// </summary>
 //template <bool QPO>
-//std::experimental::generator<chess::Move> chess::ChessPosition<QPO>::all_legal_moves()
+//std::experimental::generator<chess::Move> chess::ChessPosition::all_legal_moves()
 //{
 //    //DCHECK(Player::First)
 //    Square sq;

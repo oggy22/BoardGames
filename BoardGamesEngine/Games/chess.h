@@ -225,7 +225,7 @@ namespace chess {
     {
     public:
         bool is_valid() const { return _from.is_valid(); }
-        Move() : _from() { }    // invalid move
+        constexpr Move() : _from() { }    // invalid move
         Move(Square from, Square to, Piece piece, Piece captured = Piece::None, Piece promotion = Piece::None) :
             _from(from),
             _to(to),
@@ -276,16 +276,13 @@ namespace chess {
         Piece _promotion;
     };
 
-    template <bool QPO> // Queen Promotions Only
     class ChessPosition;
 
-    template <bool QPO>
     class ConverterSimple;
 
-    template <bool QPO> // Queen Promotions Only
     class ChessPosition : public BoardBase<8, 8, Piece>
     {
-        friend class ConverterSimple<QPO>;
+        friend class ConverterSimple;
         bool _track_pgn = false;
 
         bool construct_from_pgn(std::string pgn)
@@ -619,7 +616,7 @@ perform_move:
             return false;
         }
         
-        bool operator==(const ChessPosition<QPO>& other) const
+        bool operator==(const ChessPosition& other) const
         {
             if (King1 != other.King1 || King2 != other.King2)
                 return false;
@@ -986,7 +983,7 @@ return true;                                    \
         bool any_pawns() const;
            bool is_legal(Move move) const
         {
-            auto* nonConstThis = const_cast<chess::ChessPosition<QPO>*>(this);
+            auto* nonConstThis = const_cast<chess::ChessPosition*>(this);
 
             bool legal = nonConstThis->play_if_legal(move);
             if (!legal)
@@ -1389,29 +1386,29 @@ if (sq2.MOVE() && !belongs_to(square(sq2), player) && sq2.king_distance(other_ki
             return true;
         }
 
-        bool exists_move(bool (*func)(const ChessPosition&)) const
-        {
-            for (auto move : all_legal_moves_played())
-            {
-                bool exists = func(*this);
-                (*this) -= move;
-                if (exists)
-                    return true;
-            }
-            return false;
-        }
+        //bool exists_move(bool (*func)(const ChessPosition&)) const
+        //{
+        //    for (auto move : all_legal_moves_played())
+        //    {
+        //        bool exists = func(*this);
+        //        (*this) -= move;
+        //        if (exists)
+        //            return true;
+        //    }
+        //    return false;
+        //}
 
-        bool for_each_move(bool (*func)(const ChessPosition&)) const
-        {
-            for (auto move : all_legal_moves_played())
-            {
-                bool ret = func(*this);
-                (*this) -= move;
-                if (!ret)
-                    return false;
-            }
-            return true;
-        }
+        //bool for_each_move(bool (*func)(const ChessPosition&)) const
+        //{
+        //    for (auto move : all_legal_moves_played())
+        //    {
+        //        bool ret = func(*this);
+        //        (*this) -= move;
+        //        if (!ret)
+        //            return false;
+        //    }
+        //    return true;
+        //}
 
         std::experimental::generator<Move> all_legal_moves() const
         {
@@ -1703,14 +1700,14 @@ if (sq.MOVE() && abs(square(sq)) == PIECE && belongs_to(square(sq), player))    
         std::string get_type() const
         {
             std::string ret;
-            for (auto pair : get_pieces())
+            for (auto piece : get_pieces())
             {
-                ret += pair.first;
+                ret += Piece_to_char(piece);
             }
             return ret;
         }
 
-        static friend std::ostream& operator<<(std::ostream& os, const ChessPosition<QPO>& position)
+        static friend std::ostream& operator<<(std::ostream& os, const ChessPosition& position)
         {
             Square row("A8");
             do
@@ -1781,14 +1778,13 @@ if (sq.MOVE() && abs(square(sq)) == PIECE && belongs_to(square(sq), player))    
     };
 
 
-    template <bool QPO>
     /// <summary>
     /// 64^n
     /// </summary>
     class ConverterSimple
     {
     public:
-		using Position = chess::ChessPosition<QPO>;
+		using Position = chess::ChessPosition;
         using Move = chess::Move;
         using Key = std::string;
         static std::string name() { return "ConverterSimple"; }
@@ -1817,7 +1813,7 @@ if (sq.MOVE() && abs(square(sq)) == PIECE && belongs_to(square(sq), player))    
             return first + second;
         }
 
-        static SIZE PositionToIndex(const ChessPosition<QPO>& position)
+        static SIZE PositionToIndex(const ChessPosition& position)
         {
             SIZE factor = 1;
             SIZE ret = 0;
@@ -1829,7 +1825,7 @@ if (sq.MOVE() && abs(square(sq)) == PIECE && belongs_to(square(sq), player))    
             return ret;
         }
 
-        static bool KeyIndexToPosition(std::string key, SIZE index, ChessPosition<QPO>& pos)
+        static bool KeyIndexToPosition(std::string key, SIZE index, ChessPosition& pos)
         {
             //TODO: finish implementation
             SIZE factor = 1;
@@ -1842,7 +1838,7 @@ if (sq.MOVE() && abs(square(sq)) == PIECE && belongs_to(square(sq), player))    
             //return pos.is_legal();
         }
 
-        static std::string PositionToKey(const ChessPosition<QPO>& position)
+        static std::string PositionToKey(const ChessPosition& position)
         {
             std::string key;
             for (auto pair : position.get_piece_squares())
@@ -1852,20 +1848,19 @@ if (sq.MOVE() && abs(square(sq)) == PIECE && belongs_to(square(sq), player))    
             return key;
         }
 
-        static void flip_if_needed(ChessPosition<QPO>& pos)
+        static void flip_if_needed(ChessPosition& pos)
         {
 			//todo: implement
         }
         
     };
 
-    template <bool QPO>
     /// <summary>
 	/// 64x63x62x...x(64-n+1)
     /// </summary>
     struct ConverterReducing
     {
-        using Position = chess::ChessPosition<QPO>;
+        using Position = chess::ChessPosition;
         using Move = chess::Move;
         using Key = std::string;
 
@@ -1903,28 +1898,28 @@ if (sq.MOVE() && abs(square(sq)) == PIECE && belongs_to(square(sq), player))    
             }
         }
 
-        static std::string PositionToKey(const ChessPosition<QPO>& position)
+        static std::string PositionToKey(const ChessPosition& position)
         {
             //TODO: imlement
             return "KK";
         }
 
-        static bool KeyIndexToPosition(std::string key, SIZE index, ChessPosition<QPO>& pos)
+        static bool KeyIndexToPosition(std::string key, SIZE index, ChessPosition& pos)
         {
             return false;
         }
 
-        static SIZE PositionToIndex(const ChessPosition<QPO>& position)
+        static SIZE PositionToIndex(const ChessPosition& position)
         {
             return 0;
         }
 
-        static ChessPosition<QPO> IndexToPosition(SIZE index)
+        static ChessPosition IndexToPosition(SIZE index)
         {
-            return ChessPosition<QPO>();
+            return ChessPosition();
         }
 
-        static void flip_if_needed(ChessPosition<QPO>& pos)
+        static void flip_if_needed(ChessPosition& pos)
         {
 
         }
@@ -1954,12 +1949,9 @@ if (sq.MOVE() && abs(square(sq)) == PIECE && belongs_to(square(sq), player))    
         //    }
         //}
 
-        template <bool QPO>
-        static SIZE Enumerate(const ChessPosition<QPO>&);
-        template <bool QPO>
-        static std::tuple<std::string, SIZE> PositionToTable(const ChessPosition<QPO>&);
-        template <bool QPO>
-        static ChessPosition<QPO> TableToPosition(const std::string& type, SIZE index);
+        static SIZE Enumerate(const ChessPosition&);
+        static std::tuple<std::string, SIZE> PositionToTable(const ChessPosition&);
+        static ChessPosition TableToPosition(const std::string& type, SIZE index);
     };
 }
 
