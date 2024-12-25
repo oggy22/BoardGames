@@ -162,6 +162,7 @@ inline constexpr Direction next_direction(Direction dir)
 {
     return Direction(uint16_t(dir) * 2);
 }
+
 template<int W, int H>
 class SquareBase
 {
@@ -378,6 +379,50 @@ protected:
     uint16_t _square;
 };
 
+class SquareRequirements
+{
+    /// <summary>
+	/// Negative 1 denotes no requirements.
+    /// </summary>
+    int column, row;
+public:
+    SquareRequirements(std::string st)
+    {
+        switch (st.length())
+        {
+            case 0: column = -1; row = -1; break;
+            case 1: if (st[0] >= 'a' && st[0] <= 'z')
+            {
+                column = st[0] - 'a';
+                row = -1;
+            }
+            else
+            {
+                DCHECK(st[0] >= '1' && st[0] <= '9');
+                row = st[0] - '1';
+                column = -1;
+            }
+            break;
+            case 2:
+                column = st[0] - 'a';
+				row = st[1] - '1';
+                DCHECK(st[0] >= 'a' && st[0] <= 'z');
+                break;
+            default: DCHECK_FAIL;
+        }
+    }
+
+    template<int W, int H>
+    bool satisfies(SquareBase<W,H> sq) const
+	{
+		if (column != -1 && sq.x() != column)
+			return false;
+		if (row != -1 && sq.y() != row)
+			return false;
+		return true;
+	}
+};
+
 template<int W, int H, typename piece_t>
 class BoardBase
 {
@@ -527,6 +572,21 @@ public:
         {
             std::swap(square(start), square(end));
         }
+    }
+
+	// Starting from start square, go in the direction until a piece is found
+	// or the end of the board is reached in which case zero is returned.
+    template <Direction dir>
+    inline piece_t go_until_piece(SquareBase<W, H>& start) const
+    {
+        static_assert(is_queen_direction(dir), "Only for queen directions");
+        while (start.move<dir>())
+        {
+			piece_t piece = square(start);
+			if (piece != piece_t(0))
+				return piece;
+        }
+        return piece_t(0);
     }
 
     //TODO: consteval results in ""call to immediate function is not a constant expression"

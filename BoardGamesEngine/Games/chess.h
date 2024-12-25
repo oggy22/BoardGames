@@ -82,7 +82,6 @@ namespace chess {
     {
         switch (piece)
         {
-
         case Piece::King: return 'K';
         case Piece::Queen: return 'Q';
         case Piece::Rook: return 'R';
@@ -96,6 +95,8 @@ namespace chess {
         case Piece::OtherBishop: return 'b';
         case Piece::OtherKnight: return 'n';
         case Piece::OtherPawn: return 'p';
+
+		case Piece::None: return '.';
 
         default: DCHECK_FAIL;
         }
@@ -318,6 +319,8 @@ namespace chess {
                 // Get black move
                 std::string bmove;
                 ss >> bmove;
+                if (bmove == "")
+                    break;
                 move = this->pgn_to_move(bmove);
                 (*this) += move;
             } while (!ss.eof());
@@ -812,6 +815,42 @@ return true;                                    \
             };
         }
 
+        template <Piece abs_piece>
+        Move _pgn_to_move(Square sq_to, SquareRequirements req = SquareRequirements(""))
+        {
+            Piece piece = turn() == Player::First ? abs_piece : other(abs_piece);
+            Square sq;
+            Move move;
+            int results = 0;
+            if constexpr (abs_piece == Piece::Queen || abs_piece == Piece::Bishop)
+			{
+                sq = sq_to; if (go_until_piece<Direction::upleft>(sq) == piece && req.satisfies(sq)) { move = Move(sq, sq_to, square(sq), square(sq_to)); results++; }
+                sq = sq_to; if (go_until_piece<Direction::upright>(sq) == piece && req.satisfies(sq)) { move = Move(sq, sq_to, square(sq), square(sq_to)); results++; }
+                sq = sq_to; if (go_until_piece<Direction::downleft>(sq) == piece && req.satisfies(sq)) { move = Move(sq, sq_to, square(sq), square(sq_to)); results++; }
+                sq = sq_to; if (go_until_piece<Direction::downright>(sq) == piece && req.satisfies(sq)) { move = Move(sq, sq_to, square(sq), square(sq_to)); results++; }
+            }
+            if constexpr (abs_piece == Piece::Queen || abs_piece == Piece::Rook)
+            {
+                sq = sq_to; if (go_until_piece<Direction::up>(sq) == piece && req.satisfies(sq)) { move = Move(sq, sq_to, square(sq), square(sq_to)); results++; }
+                sq = sq_to; if (go_until_piece<Direction::down>(sq) == piece && req.satisfies(sq)) { move = Move(sq, sq_to, square(sq), square(sq_to)); results++; }
+                sq = sq_to; if (go_until_piece<Direction::left>(sq) == piece && req.satisfies(sq)) { move = Move(sq, sq_to, square(sq), square(sq_to)); results++; }
+                sq = sq_to; if (go_until_piece<Direction::right>(sq) == piece && req.satisfies(sq)) { move = Move(sq, sq_to, square(sq), square(sq_to)); results++; }
+            }
+			if constexpr (abs_piece == Piece::Knight)
+            {
+                sq = sq_to; if (sq.move_knight1() && square(sq) == piece && req.satisfies(sq)) { move = Move(sq, sq_to, square(sq), square(sq_to)); results++; }
+                sq = sq_to; if (sq.move_knight2() && square(sq) == piece && req.satisfies(sq)) { move = Move(sq, sq_to, square(sq), square(sq_to)); results++; }
+                sq = sq_to; if (sq.move_knight3() && square(sq) == piece && req.satisfies(sq)) { move = Move(sq, sq_to, square(sq), square(sq_to)); results++; }
+                sq = sq_to; if (sq.move_knight4() && square(sq) == piece && req.satisfies(sq)) { move = Move(sq, sq_to, square(sq), square(sq_to)); results++; }
+                sq = sq_to; if (sq.move_knight5() && square(sq) == piece && req.satisfies(sq)) { move = Move(sq, sq_to, square(sq), square(sq_to)); results++; }
+                sq = sq_to; if (sq.move_knight6() && square(sq) == piece && req.satisfies(sq)) { move = Move(sq, sq_to, square(sq), square(sq_to)); results++; }
+                sq = sq_to; if (sq.move_knight7() && square(sq) == piece && req.satisfies(sq)) { move = Move(sq, sq_to, square(sq), square(sq_to)); results++; }
+                sq = sq_to; if (sq.move_knight8() && square(sq) == piece && req.satisfies(sq)) { move = Move(sq, sq_to, square(sq), square(sq_to)); results++; }
+            }
+            DCHECK(results == 1);
+            return move;
+        }
+
         Move pgn_to_move(std::string str)
         {
             if (str == "O-O" && turn() == Player::First)
@@ -836,9 +875,9 @@ return true;                                    \
                 if (turn() == Player::First)
                 {
                     sq_from.move_down();
-					if (this->operator[](sq_from) != Piece::Pawn)
+					if (square(sq_from) != Piece::Pawn)
                         sq_from.move_down();
-                    DCHECK(this->operator[](sq_from) == Piece::Pawn);
+                    DCHECK(square(sq_from) == Piece::Pawn);
                 }
                 else
                 {
@@ -852,71 +891,65 @@ return true;                                    \
             }
             if (str.length() == 3)
             {
-#define CHECKDIRECTION(MOVE) sq = sq_to; while (sq.MOVE()) { if ((*this)[sq] == piece) return Move(sq, sq_to, square(sq)); }
-
 				Square sq_to(str.substr(1));
                 switch (str[0])
                 {
-				    case 'Q':
+				    case 'Q': return _pgn_to_move<Piece::Queen>(sq_to);
+					case 'R': return _pgn_to_move<Piece::Rook>(sq_to);
+					case 'B': return _pgn_to_move<Piece::Bishop>(sq_to);
+					case 'N': return _pgn_to_move<Piece::Knight>(sq_to);
+                    case 'K':
                     {
-						Piece piece = turn() == Player::First ? Piece::Queen : Piece::OtherQueen;
+                        Piece piece = turn() == Player::First ? Piece::Knight : Piece::OtherKnight;
+                        
+						Square king_sq = turn() == Player::First ? King1 : King2;
                         Square sq;
-                        CHECKDIRECTION(move_up);
-                        CHECKDIRECTION(move_down);
-                        CHECKDIRECTION(move_left);
-                        CHECKDIRECTION(move_right);
+						DCHECK(king_sq.king_distance(sq_to) == 1);
 
-                        CHECKDIRECTION(move_upleft);
-                        CHECKDIRECTION(move_upright);
-                        CHECKDIRECTION(move_downleft);
-                        CHECKDIRECTION(move_downright);
-                        DCHECK_FAIL;
-                    }
-                    case 'R':
-                    {
-                        Piece piece = turn() == Player::First ? Piece::Rook : Piece::OtherRook;
-                        Square sq;
-                        CHECKDIRECTION(move_up);
-                        CHECKDIRECTION(move_down);
-                        CHECKDIRECTION(move_left);
-                        CHECKDIRECTION(move_right);
-                        DCHECK_FAIL;
-                    }
-                    case 'B':
-                    {
-                        Piece piece = turn() == Player::First ? Piece::Bishop : Piece::OtherBishop;
-                        Square sq;
-                        CHECKDIRECTION(move_upleft);
-                        CHECKDIRECTION(move_upright);
-                        CHECKDIRECTION(move_downleft);
-                        CHECKDIRECTION(move_downright);
-                        DCHECK_FAIL;
-                    }
-
-#define CHECKMOVE(MOVE) sq = sq_to; if (sq.MOVE()) { if ((*this)[sq] == piece) return Move(sq, sq_to, square(sq)); }
-
-                    case 'N':
-                    {
-						Piece piece = turn() == Player::First ? Piece::Knight : Piece::OtherKnight;
-                        Square sq;
-						CHECKMOVE(move_knight1);
-                        CHECKMOVE(move_knight2);
-                        CHECKMOVE(move_knight3);
-                        CHECKMOVE(move_knight4);
-                        CHECKMOVE(move_knight5);
-                        CHECKMOVE(move_knight6);
-                        CHECKMOVE(move_knight7);
-                        CHECKMOVE(move_knight8);
-                        DCHECK_FAIL;
+						return Move(king_sq, sq_to, square(king_sq), square(sq_to));
                     }
                 }
 
                 DCHECK_FAIL;
             }
-            //TODO: 4 and more characters
+
+            // Promotion
+            if (str[str.length() - 2] == '=')
+            {
+                Square sq_to(str.substr(str.length()-4, 2));
+                Square sq_from = sq_to; if (turn() == Player::First) sq_from.move_down(); else sq_from.move_up();
+
+				// Capture
+                if (str[1] == 'x')
+				{
+					sq_from = Square(str[0] - 'a', sq_from.y());
+				}
+
+                Piece promotion = char_to_piece(str.back()); if (turn() == Player::Second) promotion = other(promotion);
+                return Move(sq_from, sq_to, square(sq_from), square(sq_to), promotion);
+            }
+
             if (str.length() == 4)
             {
-                DCHECK_FAIL;
+
+                Square sq_to(str.substr(2));
+                
+                // Pawn capture
+                if (str[1] == 'x')
+                {
+                    Square sq_from(str[0] - 'a', sq_to.y() - (turn() == Player::First ? 1 : -1));
+                    return Move(sq_from, sq_to, square(sq_from), square(sq_to));
+                }
+
+                SquareRequirements req(str.substr(1,1));
+                switch (str[0])
+                {
+                    case 'Q': return _pgn_to_move<Piece::Queen>(sq_to, req);
+                    case 'R': return _pgn_to_move<Piece::Rook>(sq_to, req);
+                    case 'B': return _pgn_to_move<Piece::Bishop>(sq_to, req);
+                    case 'N': return _pgn_to_move<Piece::Knight>(sq_to, req);
+					default: DCHECK_FAIL;
+                }
             }
             DCHECK_FAIL;
             return Move();
@@ -1677,16 +1710,16 @@ if (sq.MOVE() && abs(square(sq)) == PIECE && belongs_to(square(sq), player))    
 
         static friend std::ostream& operator<<(std::ostream& os, const ChessPosition<QPO>& position)
         {
-            Square row("H1");
-            Square column = row;
+            Square row("A8");
             do
             {
+                Square column = row;
                 do
                 {
                     Piece piece = position[column];
                     char c = Piece_to_char(piece);
                     os << c;
-                } while (column.move_left());
+                } while (column.move_right());
                 os << std::endl;
             } while (row.move_down());
             return os;
