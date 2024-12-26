@@ -4,7 +4,7 @@
 
 #include <functional>
 #include "..\BoardGamesEngine\endgametable.h"
-#include "..\BoardGamesEngine\Games\chess.h"
+#include "..\BoardGamesEngine\Games\chess_converters.h"
 #include "..\BoardGamesEngine\Games\Connect4.h"
 
 TEST(endtable_test, chess)

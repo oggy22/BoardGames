@@ -15,6 +15,21 @@
     <ClCompile Include="Games\TicTacToe.cpp">
       <Filter>Games</Filter>
     </ClCompile>
+    <ClCompile Include="Games\chess_transposition_tables.cpp">
+      <Filter>Games</Filter>
+    </ClCompile>
+    <ClCompile Include="Games\chess_eval.cpp">
+      <Filter>Games</Filter>
+    </ClCompile>
+    <ClCompile Include="Games\chess_fen.cpp">
+      <Filter>Games</Filter>
+    </ClCompile>
+    <ClCompile Include="Games\chess_moves.cpp">
+      <Filter>Games</Filter>
+    </ClCompile>
+    <ClCompile Include="Games\chess_pgn.cpp">
+      <Filter>Games</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Algorithms.h" />
@@ -48,6 +63,7 @@
     </ClInclude>
     <ClInclude Include="endgametable.h" />
     <ClInclude Include="KillerMoves.h" />
+    <ClInclude Include="Games\chess_converters.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Games">

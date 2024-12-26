@@ -152,6 +152,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Games\chess_eval.cpp" />
+    <ClCompile Include="Games\chess_fen.cpp" />
+    <ClCompile Include="Games\chess_moves.cpp" />
+    <ClCompile Include="Games\chess_pgn.cpp" />
+    <ClCompile Include="Games\chess_transposition_tables.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="combinations.cpp" />
     <ClCompile Include="ConverterBatches.cpp" />
@@ -163,6 +168,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Algorithms.h" />
+    <ClInclude Include="Games\chess_converters.h" />
     <ClInclude Include="combinations.h" />
     <ClInclude Include="ConverterBatches.h" />
     <ClInclude Include="core.h" />
