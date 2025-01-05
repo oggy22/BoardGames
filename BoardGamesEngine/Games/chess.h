@@ -269,6 +269,22 @@ namespace chess {
             return ret;
         }
 
+		bool next_promotion()
+		{
+            if (_promotion == Piece::None)
+                return false;
+
+            if (sgn(_promotion) == Player::First)
+                _promotion = Piece(uint8_t(_promotion) + 1);
+            else
+                _promotion = Piece(uint8_t(_promotion) - 1);
+
+            if (abs(_promotion) == Piece::Pawn)
+                return false;
+
+            return true;
+        }
+
     private:
         Square _from, _to;
         Piece _piece;

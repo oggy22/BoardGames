@@ -539,3 +539,15 @@ TEST(chess, hash)
 		}
 	}
 }
+
+TEST(chess, four_promotion_pieces)
+{
+	chess::ChessPosition pos(std::string("4k3/P7/8/8/8/8/8/4K3"));
+	int count = 0;
+	for (auto move : pos.all_legal_moves())
+	{
+		if (move.promotion() != chess::Piece::None)
+			count++;
+	}
+	EXPECT_EQ(count, 4);
+}

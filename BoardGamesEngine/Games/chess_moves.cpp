@@ -158,6 +158,20 @@ else if (dir_from!=Direction::none && is_controlled_by_from_direction(King, othe
 else                                                                                                \
     co_yield move;
 
+#define PLAY_AND_YIELD_ALL_PROMOTIONS                                                               \
+(*this) += move;                                                                                    \
+if (dir_check!=Direction::none && is_controlled_by_from_direction(King, other_player, dir_check))   \
+  {  (*this) -= move; }                                                                             \
+else if (dir_from!=Direction::none && is_controlled_by_from_direction(King, other_player, dir_from))\
+    { (*this) -= move; }                                                                            \
+else if (move.promotion() == Piece::None)                                                           \
+{   co_yield move;  }                                                                               \
+else                                                                                                \
+{                                                                                                   \
+    co_yield move;																				    \
+    while (move.next_promotion()) { (*this) += move; co_yield move; } ; }                           \
+
+
 #define MOVE_IN_DIRECTION(MOVE)                                 \
 sq2 = sq;                                                       \
 while (sq2.MOVE() && !belongs_to(square(sq2), player))          \
@@ -252,18 +266,18 @@ if (sq2.MOVE() && !belongs_to(square(sq2), player) && sq2.king_distance(other_ki
                 if (square(sqF) == Piece::None)
                 {
                     Move move(sq, sqF, square(sq), Piece::None, sqF.y() == 0 || sqF.y() == 7 ? queen : Piece::None);
-                    PLAY_AND_YIELD
+                    PLAY_AND_YIELD_ALL_PROMOTIONS
                 }
                 Square sqL = sqF, sqR = sqF;
                 if (sqL.move_left() && belongs_to(square(sqL), oponent(player)))
                 {
                     Move move(sq, sqL, square(sq), square(sqL), sqL.y() == 0 || sqL.y() == 7 ? queen : Piece::None);
-                    PLAY_AND_YIELD
+                    PLAY_AND_YIELD_ALL_PROMOTIONS
                 }
                 if (sqR.move_right() && belongs_to(square(sqR), oponent(player)))
                 {
                     Move move(sq, sqR, square(sq), square(sqR), sqR.y() == 0 || sqR.y() == 7 ? queen : Piece::None);
-                    PLAY_AND_YIELD
+                    PLAY_AND_YIELD_ALL_PROMOTIONS
                 }
                 if (square(sqF) == Piece::None)
                 {
