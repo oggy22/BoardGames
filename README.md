@@ -11,3 +11,5 @@ The main algorithm for finding best moves, regardless of the game played, is the
 1. Killer move
 1. Transposition tables
 
+# Endgame tables
+Unlike the minimax algorithm, which recursively evaluates positions to determine the best move during play, endgame tables (or tablebases) are precomputed databases that store the best move for every possible position within a specific endgame configuration in advance. Endgames are currently in development for chess.
