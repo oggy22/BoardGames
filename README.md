@@ -5,11 +5,11 @@ To get local enlistment:
 1. `git clone https://github.com/oggy22/BoardGames`
 2. Open `BoardGames.sln`
 
-# Minmax algorithm
+## Minmax algorithm
 The main algorithm for finding best moves, regardless of the game played, is the minmax algorithm. It is implemented in a highly templatized manner where you can provide any game as long as it satisfies the requirements specified by the C++ concept [BoardPosition](https://github.com/oggy22/BoardGames/blob/eac33e4aaf0dc464c61ecb5028f71c25afd8cd1f/BoardGamesEngine/core.h#L710). The following heuristics are implemented:
 1. Alhpa-beta prunning
 1. Killer move
 1. Transposition tables
 
-# Endgame tables
+## Endgame tables
 Unlike the minimax algorithm, which recursively evaluates positions to determine the best move during play, endgame tables (or tablebases) are precomputed databases that store the best move for every possible position within a specific endgame configuration in advance. Endgames are currently in development for chess.
