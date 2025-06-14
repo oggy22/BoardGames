@@ -75,7 +75,12 @@ public:
 		}
 	}
 
- 	int32_t Evaluate() const { return 0; }
+	constexpr static bool repetition_possible()
+	{
+		return true;
+	}
+
+	int32_t Evaluate() const { return 0; }
 
 	bool play_if_legal(Move move)
 	{

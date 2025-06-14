@@ -261,6 +261,14 @@ private:
 		{
 			DCHECK(position.turn() == player2);
 
+			if constexpr (Pos::repetition_possible())
+			{
+				if (curr_depth == 0 && position.ply() >= 8)
+				{
+
+				}
+			}
+
 			// Get the first move as best.
 			// Without this assignment, losing positions would keep invalid move Move().
 			if (!best.move.is_valid())

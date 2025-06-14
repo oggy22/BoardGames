@@ -347,6 +347,11 @@ namespace chess {
 
         int32_t Evaluate() const { return 0; }
 
+        constexpr static bool repetition_possible()
+        {
+            return true;
+        }
+
 #pragma region Material
 
         int get_material_full() const;

@@ -75,6 +75,11 @@ public:
 		return 0;
 	}
 
+	constexpr static bool repetition_possible()
+	{
+		return false;
+	}
+
 	MNKGeneralized()
 	{
 		SquareBase<W, H> sq(0);
@@ -453,6 +458,11 @@ template <
 class MNKGravity : public MNKGeneralized<W, DimProp::None, H, DimProp::Gravity, R, false, false, false>
 {
 public:
+	constexpr static bool repetition_possible()
+	{
+		return false;
+	}
+
 	void turn_off_all_trackings()
 	{
 	}
