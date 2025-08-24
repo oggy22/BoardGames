@@ -730,22 +730,6 @@ namespace chess {
             return ret;
         }
 
-        static friend std::ostream& operator<<(std::ostream& os, const ChessPosition& position)
-        {
-            Square row("A8");
-            do
-            {
-                Square column = row;
-                do
-                {
-                    Piece piece = position[column];
-                    char c = Piece_to_char(piece);
-                    os << c;
-                } while (column.move_right());
-                os << std::endl;
-            } while (row.move_down());
-            return os;
-        }
 
 #pragma region Transpositional tables
         inline static uint64_t hash_white[64][6], hash_black[64][6], hash_turn;
@@ -784,6 +768,24 @@ namespace chess {
         Square King1, King2;
     };
 }
+
+static std::ostream& operator<<(std::ostream& os, const chess::ChessPosition& position)
+{
+    chess::Square row("A8");
+    do
+    {
+        chess::Square column = row;
+        do
+        {
+            chess::Piece piece = position[column];
+            char c = chess::Piece_to_char(piece);
+            os << c;
+        } while (column.move_right());
+        os << std::endl;
+    } while (row.move_down());
+    return os;
+}
+
 
 namespace std {
     template <>
