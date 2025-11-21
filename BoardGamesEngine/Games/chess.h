@@ -10,6 +10,7 @@
 #include <utility>
 #include <iostream>
 #include <sstream>
+#include <optional>
 
 #include "..\core.h"
 
@@ -221,11 +222,15 @@ namespace chess {
 
 #define S(str) chess::Square(str)
 
+    class ChessPosition;
+
     class Move
     {
     public:
         bool is_valid() const { return _from.is_valid(); }
         constexpr Move() : _from() { }    // invalid move
+        static std::optional<Move> from_string(const ChessPosition& pos, const std::string& st);
+
         Move(Square from, Square to, Piece piece, Piece captured = Piece::None, Piece promotion = Piece::None) :
             _from(from),
             _to(to),
@@ -292,7 +297,6 @@ namespace chess {
         Piece _promotion;
     };
 
-    class ChessPosition;
 
     class ConverterSimple;
 
@@ -767,6 +771,29 @@ namespace chess {
     private:
         Square King1, King2;
     };
+}
+
+/// <summary>
+/// For example "e2-e4", "e7-e8Q"
+/// </summary>
+inline std::optional<chess::Move> chess::Move::from_string(const chess::ChessPosition& pos, const std::string& st)
+{
+    if (st.length() < 5)
+        return std::nullopt;
+
+    Square from(st.substr(0, 2));
+    if (!from.is_valid()) return std::nullopt;
+
+    Square to(st.substr(3, 2));
+    if (!to.is_valid()) return std::nullopt;
+
+    switch (st.length())
+    {
+        case 5: return Move(from, to, pos[from], pos[to]);
+        case 6: return Move(from, to, pos[from], pos[to], char_to_piece(st[5]));
+        default: return std::nullopt;
+    }
+    return std::nullopt;
 }
 
 static std::ostream& operator<<(std::ostream& os, const chess::ChessPosition& position)

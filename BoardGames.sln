@@ -1,11 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.30907.101
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36408.4 d17.14
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "BoardGamesEngine", "BoardGamesEngine\BoardGamesEngine.vcxproj", "{B59B9796-6CC0-477F-A5DD-11D201731B17}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EngineTests", "EngineTests\EngineTests.vcxproj", "{187687CB-B178-4CE2-BFA8-FC9A1DDAEB10}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "BoardGamesCommandLine", "BoardGamesCommandLine\BoardGamesCommandLine.vcxproj", "{EA467279-657C-4C84-9330-023355AD9755}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -31,6 +33,14 @@ Global
 		{187687CB-B178-4CE2-BFA8-FC9A1DDAEB10}.Release|x64.Build.0 = Release|x64
 		{187687CB-B178-4CE2-BFA8-FC9A1DDAEB10}.Release|x86.ActiveCfg = Release|Win32
 		{187687CB-B178-4CE2-BFA8-FC9A1DDAEB10}.Release|x86.Build.0 = Release|Win32
+		{EA467279-657C-4C84-9330-023355AD9755}.Debug|x64.ActiveCfg = Debug|x64
+		{EA467279-657C-4C84-9330-023355AD9755}.Debug|x64.Build.0 = Debug|x64
+		{EA467279-657C-4C84-9330-023355AD9755}.Debug|x86.ActiveCfg = Debug|Win32
+		{EA467279-657C-4C84-9330-023355AD9755}.Debug|x86.Build.0 = Debug|Win32
+		{EA467279-657C-4C84-9330-023355AD9755}.Release|x64.ActiveCfg = Release|x64
+		{EA467279-657C-4C84-9330-023355AD9755}.Release|x64.Build.0 = Release|x64
+		{EA467279-657C-4C84-9330-023355AD9755}.Release|x86.ActiveCfg = Release|Win32
+		{EA467279-657C-4C84-9330-023355AD9755}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -5,6 +5,7 @@
 /.vs
 /BoardGames/x64
 /BoardGamesEngine/Debug
+/BoardGamesCommandLine/x64
 /EngineTests/x64
 /EngineTests/*pgn
 /EngineTests/*csv
