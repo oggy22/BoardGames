@@ -168,7 +168,10 @@ public:
 	};
 
 private:
-	std::experimental::generator<Move> all_legal_moves_played_and_killer(int depth)
+	// The visitor receives an already-played move and must undo it before
+	// returning. false stops enumeration without constructing a wrapper coroutine.
+	template <typename Visitor>
+	bool visit_legal_moves_played_and_killer(int depth, Visitor&& visitor)
 	{
 		if constexpr (ko != KillerOptions::None)
 		{
@@ -178,7 +181,8 @@ private:
 				if (position.play_if_legal(move))
 				{
 					DCHECK(position.turn() != turn);
-					co_yield move;
+					if (!visitor(move))
+						return false;
 #ifdef STATS
 					stats[depth].killer_hits++;
 
@@ -193,18 +197,18 @@ private:
 
 		for (auto move : position.all_legal_moves_played())
 		{
-			if constexpr (ko == KillerOptions::None)
+			if constexpr (ko != KillerOptions::None)
 			{
-				co_yield move;
-			}
-			else
-			{
-				if (!killer_manager[depth].is_killer(move))
-					co_yield move;
-				else
+				if (killer_manager[depth].is_killer(move))
+				{
 					position -= move;
+					continue;
+				}
 			}
+			if (!visitor(move))
+				return false;
 		}
+		return true;
 	}
 
 	std::function<EvalValue::payload_t(Pos& position)> eval_func;
@@ -233,7 +237,7 @@ private:
 		if (curr_depth == max_depth)
 			return { Move(), eval_func(position) };
 		
-		uint64_t hash;
+		uint64_t hash = 0;
 		if constexpr (Pos::implements_hash())
 		{
 			if (curr_depth >= 3)
@@ -257,7 +261,7 @@ private:
 		}
 
 		MoveVal best { Move(), EvalValue::Lose<player1>() };
-		for (auto move1 : all_legal_moves_played_and_killer(curr_depth))
+		bool completed = visit_legal_moves_played_and_killer(curr_depth, [&](Move move1)
 		{
 			DCHECK(position.turn() == player2);
 
@@ -271,7 +275,8 @@ private:
 			if (position.easycheck_winning_move(move1))
 			{
 				position -= move1;
-				return { move1, EvalValue::Win<player1>() };
+				best = { move1, EvalValue::Win<player1>() };
+				return false;
 			}
 
 			// Perform recursive call and reverse the move
@@ -286,8 +291,11 @@ private:
 
 			// Cut the search if better or same to the cut value
 			if (best.val.is_better_or_same<player1>(cut))
-				return best;
-		}
+				return false;
+			return true;
+		});
+		if (!completed)
+			return best;
 
 		// If no moves, value=0. For chess verify if checked, then lose.
 		if (!best.move.is_valid())
@@ -301,7 +309,8 @@ private:
 
 		if constexpr (Pos::implements_hash())
 		{
-			transposition_table[curr_depth][hash] = best;
+			if (curr_depth >= 3)
+				transposition_table[curr_depth][hash] = best;
 		}
 		return best;
 	}
